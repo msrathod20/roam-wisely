@@ -30,14 +30,18 @@ export default function ExplorePage() {
   const filtered = useMemo(() => {
     let result = placesWithDistance;
 
-    if (search) {
+    const hasSearch = search.trim().length > 0;
+    if (hasSearch) {
       const q = search.toLowerCase();
       result = result.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
     }
     if (selectedCategories.length > 0) {
       result = result.filter(p => selectedCategories.includes(p.category));
     }
-    result = result.filter(p => (p.distance ?? 0) <= maxDistance);
+    // Only apply distance filter when not searching — so search results always show
+    if (!hasSearch) {
+      result = result.filter(p => (p.distance ?? 0) <= maxDistance);
+    }
     if (ecoOnly) result = result.filter(p => p.isEcoFriendly);
 
     if (user?.interests) {
