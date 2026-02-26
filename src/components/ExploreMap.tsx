@@ -3,12 +3,14 @@ import L from "leaflet";
 import { Place } from "@/data/places";
 import "leaflet/dist/leaflet.css";
 
-// Fix default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+const defaultIcon = new L.Icon({
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
 });
 
 const userIcon = new L.DivIcon({
@@ -76,7 +78,7 @@ export default function ExploreMap({ places, userLocation, onSelectPlace }: Expl
 
     places.forEach((place) => {
       const marker = L.marker([place.lat, place.lng], {
-        icon: place.isEcoFriendly ? ecoIcon : undefined,
+        icon: place.isEcoFriendly ? ecoIcon : defaultIcon,
       }).addTo(markersLayer);
 
       marker.bindPopup(`<strong>${place.name}</strong><br/><span style="font-size:12px">${place.description.slice(0, 80)}...</span>`);
