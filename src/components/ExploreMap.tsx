@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Place } from "@/data/places";
 import "leaflet/dist/leaflet.css";
@@ -26,14 +25,6 @@ const ecoIcon = new L.DivIcon({
   iconAnchor: [14, 14],
 });
 
-function MapUpdater({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
-}
-
 interface ExploreMapProps {
   places: Place[];
   userLocation: [number, number];
@@ -41,38 +32,57 @@ interface ExploreMapProps {
   selectedPlace?: Place | null;
 }
 
-export default function ExploreMap({ places, userLocation, onSelectPlace, selectedPlace }: ExploreMapProps) {
-  return (
-    <MapContainer
-      center={userLocation}
-      zoom={13}
-      className="w-full h-full min-h-[400px]"
-      scrollWheelZoom
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <MapUpdater center={userLocation} />
+export default function ExploreMap({ places, userLocation, onSelectPlace }: ExploreMapProps) {
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
-      <Marker position={userLocation} icon={userIcon}>
-        <Popup>📍 You are here</Popup>
-      </Marker>
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
 
-      {places.map((place) => (
-        <Marker
-          key={place.id}
-          position={[place.lat, place.lng]}
-          icon={place.isEcoFriendly ? ecoIcon : undefined}
-          eventHandlers={{ click: () => onSelectPlace(place) }}
-        >
-          <Popup>
-            <strong>{place.name}</strong>
-            <br />
-            <span style={{ fontSize: 12 }}>{place.description.slice(0, 80)}...</span>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
-  );
+    const map = L.map(mapContainerRef.current, {
+      center: userLocation,
+      zoom: 13,
+      zoomControl: true,
+      scrollWheelZoom: true,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    markersLayerRef.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markersLayerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !markersLayerRef.current) return;
+
+    const map = mapRef.current;
+    const markersLayer = markersLayerRef.current;
+
+    markersLayer.clearLayers();
+    map.setView(userLocation, map.getZoom());
+
+    L.marker(userLocation, { icon: userIcon })
+      .bindPopup("📍 You are here")
+      .addTo(markersLayer);
+
+    places.forEach((place) => {
+      const marker = L.marker([place.lat, place.lng], {
+        icon: place.isEcoFriendly ? ecoIcon : undefined,
+      }).addTo(markersLayer);
+
+      marker.bindPopup(`<strong>${place.name}</strong><br/><span style="font-size:12px">${place.description.slice(0, 80)}...</span>`);
+      marker.on("click", () => onSelectPlace(place));
+    });
+  }, [places, userLocation, onSelectPlace]);
+
+  return <div ref={mapContainerRef} className="w-full h-full min-h-[400px]" aria-label="Map view" />;
 }
