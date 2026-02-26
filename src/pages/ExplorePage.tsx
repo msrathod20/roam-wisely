@@ -1,7 +1,6 @@
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo } from "react";
 import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/places";
 import { useGeolocation } from "@/hooks/useGeolocation";
-const ExploreMap = lazy(() => import("@/components/ExploreMap"));
 import PlaceCard from "@/components/PlaceCard";
 import PlaceDetail from "@/components/PlaceDetail";
 import FilterBar from "@/components/FilterBar";
@@ -17,7 +16,7 @@ export default function ExplorePage() {
   const [maxDistance, setMaxDistance] = useState(100);
   const [ecoOnly, setEcoOnly] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [viewMode, setViewMode] = useState<"split" | "list" | "map">("split");
+  // removed map view mode
 
   const userLat = latitude ?? 12.9716;
   const userLng = longitude ?? 77.5946;
@@ -86,19 +85,6 @@ export default function ExplorePage() {
               • {filtered.length} places found
             </p>
           </div>
-          <div className="hidden md:flex gap-1 bg-muted rounded-lg p-1">
-            {(["split", "list", "map"] as const).map(m => (
-              <button
-                key={m}
-                onClick={() => setViewMode(m)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold capitalize transition-colors ${
-                  viewMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                }`}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
         </div>
 
         <FilterBar
@@ -114,34 +100,18 @@ export default function ExplorePage() {
       </div>
 
       <div className="flex-1 container pb-6">
-        <div className={`grid gap-4 h-full ${
-          viewMode === "split" ? "lg:grid-cols-2" : ""
-        }`}>
-          {viewMode !== "list" && (
-            <div className="rounded-xl overflow-hidden border border-border h-[400px] lg:h-[600px]">
-              <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-muted"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
-                <ExploreMap
-                  places={filtered}
-                  userLocation={[userLat, userLng]}
-                  onSelectPlace={setSelectedPlace}
-                  selectedPlace={selectedPlace}
-                />
-              </Suspense>
+        <div className="space-y-4">
+          {filtered.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-4xl mb-3">🗺️</p>
+              <p className="text-muted-foreground font-medium">No places found</p>
+              <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
             </div>
-          )}
-          {viewMode !== "map" && (
-            <div className="space-y-4 overflow-y-auto max-h-[600px] pr-1">
-              {filtered.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-4xl mb-3">🗺️</p>
-                  <p className="text-muted-foreground font-medium">No places found</p>
-                  <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
-                </div>
-              ) : (
-                filtered.map(place => (
-                  <PlaceCard key={place.id} place={place} onSelect={setSelectedPlace} />
-                ))
-              )}
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map(place => (
+                <PlaceCard key={place.id} place={place} onSelect={setSelectedPlace} />
+              ))}
             </div>
           )}
         </div>
