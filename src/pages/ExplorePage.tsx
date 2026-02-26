@@ -17,7 +17,7 @@ export default function ExplorePage() {
   const [maxDistance, setMaxDistance] = useState(100);
   const [ecoOnly, setEcoOnly] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [viewMode, setViewMode] = useState<"split" | "list" | "map">("list");
+  const [viewMode, setViewMode] = useState<"split" | "list" | "map">("split");
 
   const userLat = latitude ?? 12.9716;
   const userLng = longitude ?? 77.5946;
