@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { Users, Plus, UserPlus, MapPin, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 interface Group {
   id: string;
@@ -26,6 +28,9 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>(MOCK_GROUPS);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
+  const [inviteGroupId, setInviteGroupId] = useState<string | null>(null);
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
 
   if (!user) {
     return (
@@ -44,6 +49,19 @@ export default function GroupsPage() {
     setGroups(prev => [...prev, { id: `g${Date.now()}`, name: newName, members: [] }]);
     setNewName("");
     setShowCreate(false);
+  };
+
+  const inviteFriend = () => {
+    if (!inviteName.trim() || !inviteEmail.trim() || !inviteGroupId) return;
+    setGroups(prev => prev.map(g =>
+      g.id === inviteGroupId
+        ? { ...g, members: [...g.members, { name: inviteName, email: inviteEmail, lat: 12.97 + Math.random() * 0.02, lng: 77.58 + Math.random() * 0.03, sharing: true }] }
+        : g
+    ));
+    toast({ title: "Invite sent!", description: `${inviteName} has been added to the group.` });
+    setInviteName("");
+    setInviteEmail("");
+    setInviteGroupId(null);
   };
 
   return (
@@ -113,12 +131,30 @@ export default function GroupsPage() {
                 <p className="text-sm text-muted-foreground text-center py-6">No members yet. Invite friends to get started!</p>
               )}
             </div>
-            <button className="flex items-center gap-1.5 mt-5 text-sm text-primary font-bold hover:underline">
+            <button onClick={() => setInviteGroupId(group.id)} className="flex items-center gap-1.5 mt-5 text-sm text-primary font-bold hover:underline">
               <UserPlus className="w-4 h-4" /> Invite Friend
             </button>
           </motion.div>
         ))}
       </div>
+
+      <Dialog open={!!inviteGroupId} onOpenChange={(open) => { if (!open) setInviteGroupId(null); }}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">Invite a Friend</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Friend's name"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="Friend's email" type="email"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <button onClick={inviteFriend} disabled={!inviteName.trim() || !inviteEmail.trim()}
+              className="w-full px-5 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 hover:shadow-lg hover:shadow-primary/20 transition-all">
+              Send Invite
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
