@@ -8,29 +8,42 @@ export default function Navbar() {
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
+  const isLanding = location.pathname === "/";
 
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="sticky top-0 z-50 glass-card border-b border-border"
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isLanding ? "bg-transparent absolute w-full" : "glass-card border-b border-border shadow-sm"
+      }`}
     >
       <div className="container flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-sm">
             <Compass className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="hidden sm:block">
-            <span className="font-display text-lg font-bold text-foreground">Explorer</span>
-            <span className="text-xs text-muted-foreground block -mt-1 font-sans">Beyond Horizons</span>
+            <span className={`font-display text-lg font-bold ${isLanding ? "text-primary-foreground" : "text-foreground"}`}>
+              Explorer
+            </span>
+            <span className={`text-[10px] block -mt-0.5 font-medium tracking-wider uppercase ${
+              isLanding ? "text-primary-foreground/60" : "text-muted-foreground"
+            }`}>
+              Beyond Horizons
+            </span>
           </div>
         </Link>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           <Link
             to="/explore"
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive("/explore") ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+              isActive("/explore")
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : isLanding
+                  ? "text-primary-foreground/80 hover:bg-primary-foreground/10"
+                  : "text-muted-foreground hover:bg-muted"
             }`}
           >
             <Map className="w-4 h-4" />
@@ -41,8 +54,12 @@ export default function Navbar() {
             <>
               <Link
                 to="/favorites"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive("/favorites") ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  isActive("/favorites")
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : isLanding
+                      ? "text-primary-foreground/80 hover:bg-primary-foreground/10"
+                      : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 <Heart className="w-4 h-4" />
@@ -50,8 +67,12 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/groups"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive("/groups") ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  isActive("/groups")
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : isLanding
+                      ? "text-primary-foreground/80 hover:bg-primary-foreground/10"
+                      : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -61,21 +82,27 @@ export default function Navbar() {
           )}
 
           {user ? (
-            <div className="flex items-center gap-2 ml-2">
+            <div className="flex items-center gap-1.5 ml-2">
               <Link
                 to="/profile"
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-semibold"
+                className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shadow-sm hover:shadow-md transition-shadow"
               >
                 {user.name[0].toUpperCase()}
               </Link>
-              <button onClick={logout} className="p-2 text-muted-foreground hover:text-foreground transition-colors" aria-label="Logout">
+              <button
+                onClick={logout}
+                className={`p-2 rounded-lg transition-colors ${
+                  isLanding ? "text-primary-foreground/70 hover:text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="Logout"
+              >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
           ) : (
             <Link
               to="/login"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity ml-2"
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ml-2"
             >
               <User className="w-4 h-4" />
               <span>Sign In</span>

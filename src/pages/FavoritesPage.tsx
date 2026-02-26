@@ -1,11 +1,10 @@
 import { useApp } from "@/context/AppContext";
-import { BANGALORE_PLACES } from "@/data/places";
+import { BANGALORE_PLACES, Place } from "@/data/places";
 import PlaceCard from "@/components/PlaceCard";
+import PlaceDetail from "@/components/PlaceDetail";
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import PlaceDetail from "@/components/PlaceDetail";
-import { Place } from "@/data/places";
 
 export default function FavoritesPage() {
   const { favorites } = useApp();
@@ -13,19 +12,34 @@ export default function FavoritesPage() {
   const favPlaces = BANGALORE_PLACES.filter(p => favorites.includes(p.id));
 
   return (
-    <div className="container py-6 min-h-[60vh]">
-      <h1 className="font-display text-2xl font-bold text-foreground mb-1">Saved Places</h1>
-      <p className="text-sm text-muted-foreground mb-6">{favPlaces.length} places saved</p>
+    <div className="container py-8 min-h-[60vh]">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="font-display text-3xl font-extrabold text-foreground mb-1">Saved Places</h1>
+        <p className="text-sm text-muted-foreground mb-8">
+          <span className="text-primary font-semibold">{favPlaces.length}</span> places saved
+        </p>
+      </motion.div>
 
       {favPlaces.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-          <Heart className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
-          <p className="text-muted-foreground font-medium">No saved places yet</p>
-          <p className="text-sm text-muted-foreground">Tap the heart icon on any place to save it</p>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-20">
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
+            <Heart className="w-10 h-10 text-muted-foreground/40" />
+          </div>
+          <p className="font-display font-bold text-foreground text-lg">No saved places yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Tap the heart icon on any place to save it</p>
         </motion.div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {favPlaces.map(p => <PlaceCard key={p.id} place={p} onSelect={setSelected} />)}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {favPlaces.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <PlaceCard place={p} onSelect={setSelected} />
+            </motion.div>
+          ))}
         </div>
       )}
       <PlaceDetail place={selected} onClose={() => setSelected(null)} />
