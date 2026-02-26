@@ -14,10 +14,7 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
   const isFav = favorites.includes(place.id);
   const visited = visitedPlaces.includes(place.id);
 
-  const openDirections = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`, "_blank");
-  };
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
 
   return (
     <motion.article
@@ -83,12 +80,15 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
         )}
 
         <div className="flex items-center gap-2 pt-1">
-          <button
-            onClick={openDirections}
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:shadow-md hover:shadow-primary/20 transition-all"
           >
             <Navigation className="w-3.5 h-3.5" /> Directions
-          </button>
+          </a>
           {user && (
             <button
               onClick={(e) => { e.stopPropagation(); markVisited(place.id); }}
