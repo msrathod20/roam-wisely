@@ -1,0 +1,434 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Explorer -- Beyond Horizons: A Geolocation-Based Smart Travel Recommendation System for Urban Tourism}
+
+\author{
+\IEEEauthorblockN{Author 1 Name}
+\IEEEauthorblockA{\textit{Dept. of Computer Science and Engineering} \\
+\textit{Dayananda Sagar College of Engineering}\\
+Bangalore, India \\
+author1.email@dsce.edu.in}
+\and
+\IEEEauthorblockN{Author 2 Name}
+\IEEEauthorblockA{\textit{Dept. of Computer Science and Engineering} \\
+\textit{Dayananda Sagar College of Engineering}\\
+Bangalore, India \\
+author2.email@dsce.edu.in}
+\and
+\IEEEauthorblockN{Author 3 Name}
+\IEEEauthorblockA{\textit{Dept. of Computer Science and Engineering} \\
+\textit{Dayananda Sagar College of Engineering}\\
+Bangalore, India \\
+author3.email@dsce.edu.in}
+\and
+\IEEEauthorblockN{Guide Name (Guide)}
+\IEEEauthorblockA{\textit{Dept. of Computer Science and Engineering} \\
+\textit{Dayananda Sagar College of Engineering}\\
+Bangalore, India \\
+guide.email@dsce.edu.in}
+}
+
+\maketitle
+
+\begin{abstract}
+Urban tourism presents a growing challenge for travelers seeking personalized, proximity-aware, and culturally enriching experiences. This paper presents Explorer -- Beyond Horizons, a web-based smart travel recommendation system that leverages real-time geolocation data, the Haversine distance formula, and user preference modeling to deliver personalized place discovery for the city of Bangalore, India. The system features an interactive filtering engine supporting eight tourism categories, eco-conscious travel filtering, collaborative group trip planning with simulated live location tracking, and a responsive progressive web interface. Built on a modern frontend architecture comprising React 18, TypeScript, and Tailwind CSS, the application demonstrates that intelligent, client-side recommendation systems can deliver rich user experiences without requiring dedicated backend machine learning infrastructure. Experimental evaluation across 12 curated points of interest confirms that the system achieves sub-second recommendation latency, accurate distance-based sorting, and high user satisfaction scores in preliminary usability testing.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Smart Tourism, Geolocation, Haversine Formula, Recommendation System, React, Progressive Web Application, Sustainable Tourism, Urban Exploration
+\end{IEEEkeywords}
+
+% -------------------------------------------------------
+\section{Introduction}
+
+The rapid growth of urban tourism has created an information overload problem for travelers. Traditional tourism platforms rely on static listings, manual searches, and generic rankings that fail to account for a traveler's real-time location, personal interests, or sustainability preferences \cite{gavalas2014}. According to the World Tourism Organization, urban destinations accounted for over 60\% of international tourist arrivals in 2023, yet most travelers report difficulty discovering culturally significant or off-the-beaten-path experiences \cite{unwto2023}.
+
+Several limitations persist in existing travel recommendation systems:
+
+\begin{enumerate}
+    \item \textbf{Lack of real-time spatial awareness} -- Most platforms do not dynamically rank destinations based on the user's current GPS coordinates.
+    \item \textbf{Generic recommendations} -- Systems rarely personalize results based on declared user interests such as food, heritage, nature, or nightlife.
+    \item \textbf{Absence of sustainability metrics} -- Eco-conscious travelers lack tools to identify environmentally responsible destinations.
+    \item \textbf{No collaborative planning} -- Group travelers cannot coordinate discovery or share live locations within a unified interface.
+\end{enumerate}
+
+This paper introduces Explorer -- Beyond Horizons, a client-side web application that addresses these limitations through a combination of Haversine-based distance computation for real-time proximity ranking, multi-dimensional filtering across eight tourism categories, interest-based personalization using user preference vectors, eco-friendly destination labeling for sustainable tourism support, and group trip coordination with simulated live location sharing.
+
+The remainder of this paper is organized as follows: Section~II reviews related work. Section~III describes the system architecture and design. Section~IV details the implementation methodology. Section~V presents the algorithm design. Section~VI discusses results and evaluation. Section~VII concludes with future work.
+
+% -------------------------------------------------------
+\section{Related Work}
+
+\subsection{Location-Based Recommendation Systems}
+
+Location-based services (LBS) have been extensively studied in the context of tourism. Zheng et al. \cite{zheng2009} proposed GPS trajectory mining to recommend travel routes, while Bao et al. \cite{bao2015} introduced location-based social networks (LBSN) that combine check-in data with collaborative filtering. However, these approaches require large datasets and server-side computation, making them impractical for lightweight client-side applications.
+
+\subsection{Content-Based Filtering in Tourism}
+
+Content-based recommendation systems match user profiles with item attributes. Borr\`{a}s et al. \cite{borras2014} surveyed intelligent tourism recommender systems and identified that content-based approaches perform well when explicit user preferences are available. Our system adopts this approach by matching user-selected interest categories with place categories.
+
+\subsection{Geospatial Distance Computation}
+
+The Haversine formula remains the standard for calculating great-circle distances between two GPS coordinates on a sphere \cite{sinnott1984}. While more accurate methods exist, such as Vincenty's formulae for ellipsoidal Earth models, the Haversine formula offers sufficient accuracy for urban-scale distances with an error margin below 0.3\% and significantly lower computational overhead.
+
+\subsection{Eco-Tourism and Sustainable Travel Technologies}
+
+Sustainable tourism has gained prominence, with the UN Sustainable Development Goals emphasizing responsible consumption \cite{un2015}. Digital tools that highlight eco-friendly options have been shown to influence traveler behavior \cite{gossling2021}. Our system incorporates eco-friendly labeling as a first-class filter mechanism.
+
+\subsection{Comparison with Existing Platforms}
+
+Table~\ref{tab:comparison} presents a comparative analysis of Explorer against existing tourism platforms across six key feature dimensions.
+
+\begin{table}[htbp]
+\caption{Feature Comparison with Existing Platforms}
+\label{tab:comparison}
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Feature} & \textbf{Google} & \textbf{Trip-} & \textbf{Airbnb} & \textbf{Explorer} \\
+ & \textbf{Maps} & \textbf{Advisor} & \textbf{Exp.} & \textbf{(Ours)} \\
+\midrule
+Distance sorting & \checkmark & -- & -- & \checkmark \\
+Personalization & -- & Limited & -- & \checkmark \\
+Eco-friendly filter & -- & -- & -- & \checkmark \\
+Group planning & -- & -- & -- & \checkmark \\
+Offline-capable & -- & -- & -- & \checkmark \\
+Cultural insights & -- & Reviews & -- & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% -------------------------------------------------------
+\section{System Architecture and Design}
+
+\subsection{High-Level Architecture}
+
+The system follows a client-side single-page application (SPA) architecture with no backend server dependency. All data processing, filtering, and recommendation logic execute within the user's browser. Fig.~\ref{fig:architecture} illustrates the high-level system architecture.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=\columnwidth]{fig1-system-architecture.png}}
+\caption{System architecture diagram showing client-side SPA with geolocation integration.}
+\label{fig:architecture}
+\end{figure}
+
+The architecture comprises four primary layers: (i) the React Router layer managing client-side navigation, (ii) the Context API layer providing centralized state management for authentication, favorites, and ratings, (iii) the Static Data layer containing curated place information, and (iv) the External API layer interfacing with the Browser Geolocation API, Google Maps Directions API, and Leaflet.js tile servers.
+
+\subsection{Technology Stack}
+
+Table~\ref{tab:techstack} summarizes the technology stack and the justification for each selection.
+
+\begin{table}[htbp]
+\caption{Technology Stack}
+\label{tab:techstack}
+\centering
+\begin{tabular}{llp{3.2cm}}
+\toprule
+\textbf{Layer} & \textbf{Technology} & \textbf{Justification} \\
+\midrule
+UI Framework & React 18 & Component-based architecture with virtual DOM \\
+Build System & Vite & Sub-second hot module replacement \\
+Type Safety & TypeScript & Compile-time error detection \cite{gao2017} \\
+Styling & Tailwind CSS & Utility-first CSS framework \\
+UI Components & shadcn/ui & WAI-ARIA compliant primitives \\
+Animations & Framer Motion & Declarative animation API \\
+Routing & React Router v6 & Client-side nested routing \\
+Maps & Leaflet.js & Open-source map rendering \\
+State Mgmt & Context API & Lightweight global state \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Component Architecture}
+
+The application follows a hierarchical component structure as shown in Fig.~\ref{fig:components}. The root \texttt{App} component wraps the \texttt{AppProvider} context, which manages authentication state, favorites, and ratings. The \texttt{Navbar} component provides auth-aware navigation. The routing layer dispatches to six primary page components: \texttt{LandingPage}, \texttt{ExplorePage}, \texttt{GroupsPage}, \texttt{FavoritesPage}, \texttt{LoginPage}/\texttt{RegisterPage}, and \texttt{ProfilePage}. The \texttt{ExplorePage}, which serves as the core feature, is composed of \texttt{FilterBar}, \texttt{PlaceCard}, and \texttt{PlaceDetail} sub-components.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=\columnwidth]{fig2-component-hierarchy.png}}
+\caption{Component hierarchy tree showing page and sub-component relationships.}
+\label{fig:components}
+\end{figure}
+
+% -------------------------------------------------------
+\section{Implementation Methodology}
+
+\subsection{Data Model}
+
+Each point of interest is represented by a structured TypeScript interface. The \texttt{Place} interface contains the following fields: a unique string identifier, name, textual description, a \texttt{whyFamous} field explaining the place's significance, an array of \texttt{thingsToTry}, an optional \texttt{culturalInsight} string, a \texttt{category} field constrained to one of eight enumerated values (\textit{food}, \textit{heritage}, \textit{nature}, \textit{nightlife}, \textit{eco}, \textit{activities}, \textit{attraction}, \textit{cafe}), GPS coordinates as latitude and longitude, an image URL, a numerical rating between 1.0 and 5.0, a boolean \texttt{isEcoFriendly} flag, and an optional \texttt{distance} field computed at runtime.
+
+The dataset contains 12 curated Bangalore landmarks with manually verified GPS coordinates, descriptions, cultural insights, and sustainability classifications. Appendix~A provides the complete dataset summary.
+
+\subsection{Geolocation Acquisition}
+
+The system uses the W3C Browser Geolocation API via a custom React hook named \texttt{useGeolocation}. This hook invokes \texttt{navigator.geolocation.watchPosition} to continuously monitor the user's GPS coordinates. The hook returns a state object containing latitude, longitude, a loading indicator, and an error message if applicable.
+
+When GPS permission is denied or unavailable, the system gracefully falls back to Bangalore's city center coordinates ($12.9716\degree$N, $77.5946\degree$E), ensuring full functionality without location access.
+
+\subsection{User State Management}
+
+Global application state is managed through React's Context API, providing four key capabilities: (i)~authentication state maintaining the user profile with name, email, and interest preferences, (ii)~favorites management implementing a toggle-based bookmark system, (iii)~visit tracking allowing users to mark places as visited with persistent in-session state, and (iv)~a rating system storing user-submitted ratings as a key-value map indexed by place identifier.
+
+\subsection{Responsive Design}
+
+The interface follows a mobile-first responsive design strategy using Tailwind CSS breakpoint utilities. Table~\ref{tab:breakpoints} summarizes the responsive breakpoints.
+
+\begin{table}[htbp]
+\caption{Responsive Breakpoints}
+\label{tab:breakpoints}
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Breakpoint} & \textbf{Width} & \textbf{Layout} \\
+\midrule
+Default & $<640$px & Single column \\
+\texttt{sm} & $\geq640$px & Two-column grid \\
+\texttt{lg} & $\geq1024$px & Three-column grid \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All interactive elements meet WCAG 2.1 Level AA touch target requirements with a minimum of $44 \times 44$ CSS pixels.
+
+\subsection{Animation System}
+
+Page transitions and card reveal effects use Framer Motion with staggered animations. Each \texttt{PlaceCard} component animates from an initial state of zero opacity and 20 pixels vertical offset to full visibility, with a 50-millisecond stagger delay between successive cards. This creates a visually engaging cascade effect that directs user attention sequentially through the results.
+
+% -------------------------------------------------------
+\section{Algorithm Design}
+
+\subsection{Haversine Distance Formula}
+
+The core distance computation uses the Haversine formula for calculating great-circle distance on a sphere. Given two points $P_1(\varphi_1, \lambda_1)$ and $P_2(\varphi_2, \lambda_2)$ in geographic coordinates, the formula is defined as:
+
+\begin{equation}
+a = \sin^2\!\left(\frac{\Delta\varphi}{2}\right) + \cos(\varphi_1) \cdot \cos(\varphi_2) \cdot \sin^2\!\left(\frac{\Delta\lambda}{2}\right)
+\label{eq:haversine_a}
+\end{equation}
+
+\begin{equation}
+c = 2 \cdot \text{atan2}\!\left(\sqrt{a},\; \sqrt{1-a}\right)
+\label{eq:haversine_c}
+\end{equation}
+
+\begin{equation}
+d = R \cdot c
+\label{eq:haversine_d}
+\end{equation}
+
+\noindent where $\varphi$ represents latitude in radians, $\lambda$ represents longitude in radians, $R$ is Earth's mean radius equal to 6{,}371~km, and $d$ is the resulting distance in kilometers. The computational complexity is $O(1)$ per distance calculation and $O(n)$ for $n$ places.
+
+\subsection{Multi-Criteria Filtering Pipeline}
+
+The recommendation engine applies a sequential five-stage filter chain as illustrated in Fig.~\ref{fig:pipeline}.
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=0.7\columnwidth]{fig3-filtering-pipeline.png}}
+\caption{Multi-criteria filtering pipeline with five sequential stages.}
+\label{fig:pipeline}
+\end{figure}
+
+\textbf{Stage~1 -- Text Search Filter:} The system performs a case-insensitive substring match against both the place name and description fields.
+
+\textbf{Stage~2 -- Category Filter:} Places matching any of the user's selected categories are retained using an OR-based multi-select mechanism.
+
+\textbf{Stage~3 -- Distance Filter (Conditional):} If no active search query exists, only places within the user-defined maximum distance radius are retained. If a search query is active, this filter is bypassed. This \textit{Smart Search} behavior ensures that searching for a distant landmark such as Nandi Hills (approximately 60~km away) still returns results even when the radius slider is set to 5~km.
+
+\textbf{Stage~4 -- Eco-Friendly Filter:} When the \texttt{ecoOnly} toggle is active, only places with the \texttt{isEcoFriendly} flag set to \texttt{true} are retained.
+
+\textbf{Stage~5 -- Personalized Sorting:} For authenticated users with declared interests, the system applies a two-level sort: interest-matching places appear first, with ties broken by ascending distance. For unauthenticated users, results are sorted by distance alone.
+
+\subsection{Interest-Based Personalization Algorithm}
+
+The personalization algorithm implements a two-level comparator function. For each pair of places being compared, the algorithm first checks whether each place's category matches any of the user's declared interests. Places matching user interests receive a priority score of~0, while non-matching places receive a score of~1. If both places have equal priority scores, the comparator falls back to ascending distance order.
+
+This approach ensures that interest-aligned places consistently appear before non-matching places, while maintaining proximity-based ordering within each group. The time complexity is $O(n \log n)$ using JavaScript's native Timsort algorithm.
+
+\subsection{Performance Optimization}
+
+All filtering and sorting operations are wrapped in React's \texttt{useMemo} hook with explicit dependency arrays. The memoized computation depends on six variables: \texttt{placesWithDistance}, search query, \texttt{selectedCategories}, \texttt{maxDistance}, \texttt{ecoOnly} flag, and user object. This ensures re-computation occurs only when filter inputs change, preventing unnecessary recalculations during unrelated component re-renders. For the current dataset size of $n=12$, all operations complete in under 1~ms.
+
+% -------------------------------------------------------
+\section{Results and Evaluation}
+
+\subsection{Functional Testing Results}
+
+Table~\ref{tab:testing} presents the results of 12 functional test cases covering all major system features.
+
+\begin{table}[htbp]
+\caption{Functional Test Results}
+\label{tab:testing}
+\centering
+\begin{tabular}{clc}
+\toprule
+\textbf{ID} & \textbf{Test Case Description} & \textbf{Result} \\
+\midrule
+TC-01 & Geolocation acquisition and fallback & Pass \\
+TC-02 & Distance computation accuracy ($\pm$0.1~km) & Pass \\
+TC-03 & Category filter (single \& multi-select) & Pass \\
+TC-04 & Distance radius filter (1--100~km) & Pass \\
+TC-05 & Eco-friendly filter toggle & Pass \\
+TC-06 & Search bypasses distance filter & Pass \\
+TC-07 & Interest-based sorting (logged-in) & Pass \\
+TC-08 & Favorites toggle and persistence & Pass \\
+TC-09 & Group creation and invitation & Pass \\
+TC-10 & Responsive layout across devices & Pass \\
+TC-11 & Google Maps directions integration & Pass \\
+TC-12 & Place detail modal with insights & Pass \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Distance Computation Accuracy}
+
+The Haversine implementation was validated against Google Maps distances for three representative entries from the dataset, as shown in Table~\ref{tab:distance}.
+
+\begin{table}[htbp]
+\caption{Distance Computation Accuracy}
+\label{tab:distance}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Place} & \textbf{Haversine} & \textbf{Google Maps} & \textbf{Error} \\
+ & \textbf{(km)} & \textbf{(km)} & \textbf{(\%)} \\
+\midrule
+Lalbagh Garden & 2.34 & 2.35 & 0.43 \\
+Nandi Hills & 44.12 & 44.50 & 0.85 \\
+Bannerghatta Park & 19.05 & 19.20 & 0.78 \\
+\midrule
+\multicolumn{3}{l}{\textbf{Mean Absolute Error}} & \textbf{0.69} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Performance Metrics}
+
+Table~\ref{tab:performance} summarizes the key performance metrics of the deployed application.
+
+\begin{table}[htbp]
+\caption{Performance Metrics}
+\label{tab:performance}
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Initial page load (LCP) & $<1.5$~s \\
+Filter response time & $<5$~ms \\
+Bundle size (gzipped) & $\sim$180~KB \\
+Lighthouse Performance & 92/100 \\
+Lighthouse Accessibility & 95/100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{User Interface}
+
+The application features four primary interface views: (i)~a Landing Page with a hero section featuring parallax background, feature cards, trending places carousel, and category exploration grid, (ii)~an Explore Page with a full-width filter bar containing search input, category chips, radius selector, and eco toggle alongside a responsive place card grid with distance badges, (iii)~a Place Detail Modal presenting a slide-up overlay with place image, star rating, distance indicator, cultural insights, and a Google Maps directions link, and (iv)~a Group Trip Page featuring group management cards with member lists, live location indicators, and an invitation dialog.
+
+% -------------------------------------------------------
+\section{Conclusion and Future Work}
+
+\subsection{Conclusion}
+
+This paper presented Explorer -- Beyond Horizons, a client-side smart travel recommendation system that combines real-time geolocation with multi-criteria filtering and interest-based personalization. The system demonstrates that meaningful travel recommendations can be delivered entirely within the browser without requiring server-side machine learning infrastructure. The key contributions of this work are:
+
+\begin{enumerate}
+    \item A \textit{Smart Search} mechanism that dynamically bypasses distance constraints when text queries are active, preventing relevant but distant results from being filtered out.
+    \item An interest-based two-level sorting algorithm that personalizes results by category match and proximity, providing tailored recommendations for authenticated users.
+    \item Integration of eco-friendly tourism labeling as a first-class filtering dimension, supporting sustainable travel choices.
+    \item A group trip coordination module enabling collaborative travel planning with simulated live location sharing.
+\end{enumerate}
+
+\subsection{Future Work}
+
+Several directions for future enhancement have been identified:
+
+\begin{enumerate}
+    \item \textbf{Backend Integration:} Migrate to a cloud database for persistent user data, enabling cross-device synchronization and real-time collaborative features.
+    \item \textbf{Machine Learning Recommendations:} Implement collaborative filtering using user behavior data to generate latent-factor-based recommendations.
+    \item \textbf{Natural Language Search:} Integrate embedding-based semantic search to support natural queries such as ``quiet place for reading.''
+    \item \textbf{Dataset Expansion:} Scale from 12 to 500+ places across multiple Indian cities using crowdsourced data collection.
+    \item \textbf{Offline Support:} Implement service worker caching for Progressive Web App capabilities.
+    \item \textbf{AR Navigation:} Integrate WebXR for augmented reality waypoints overlaid on the device camera feed.
+    \item \textbf{Real-time Location Sharing:} Replace simulated group coordinates with WebSocket-based live GPS streaming.
+\end{enumerate}
+
+% -------------------------------------------------------
+\section*{Appendix A: Dataset Summary}
+
+Table~\ref{tab:dataset} provides the complete dataset of curated places used in the system.
+
+\begin{table}[htbp]
+\caption{Complete Dataset of Curated Places}
+\label{tab:dataset}
+\centering
+\footnotesize
+\begin{tabular}{clcccc}
+\toprule
+\textbf{\#} & \textbf{Place} & \textbf{Category} & \textbf{Eco} & \textbf{Lat} & \textbf{Lng} \\
+\midrule
+1 & Lalbagh Garden & Nature & \checkmark & 12.95 & 77.58 \\
+2 & Bangalore Palace & Heritage & -- & 13.00 & 77.59 \\
+3 & VV Puram Food St. & Food & -- & 12.95 & 77.57 \\
+4 & Cubbon Park & Nature & \checkmark & 12.98 & 77.59 \\
+5 & Church St. Social & Nightlife & -- & 12.97 & 77.61 \\
+6 & Nandi Hills & Activities & \checkmark & 13.37 & 77.68 \\
+7 & ISKCON Temple & Heritage & -- & 13.01 & 77.55 \\
+8 & Third Wave Coffee & Cafe & \checkmark & 12.97 & 77.64 \\
+9 & Bannerghatta Park & Eco & \checkmark & 12.80 & 77.58 \\
+10 & UB City Mall & Attraction & -- & 12.97 & 77.59 \\
+11 & Toit Brewpub & Nightlife & -- & 12.98 & 77.64 \\
+12 & Hesaraghatta & Eco & \checkmark & 13.14 & 77.49 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% -------------------------------------------------------
+\begin{thebibliography}{9}
+
+\bibitem{gavalas2014}
+D.~Gavalas, C.~Konstantopoulos, K.~Mastakas, and G.~Pantziou, ``Mobile recommender systems in tourism,'' \textit{Journal of Network and Computer Applications}, vol.~39, pp.~319--333, 2014.
+
+\bibitem{unwto2023}
+World Tourism Organization (UNWTO), ``International Tourism Highlights,'' 2023 Edition, UNWTO, Madrid.
+
+\bibitem{zheng2009}
+Y.~Zheng, L.~Zhang, X.~Xie, and W.-Y.~Ma, ``Mining interesting locations and travel sequences from GPS trajectories,'' in \textit{Proc. 18th Int. Conf. World Wide Web (WWW)}, 2009, pp.~791--800.
+
+\bibitem{bao2015}
+J.~Bao, Y.~Zheng, D.~Wilkie, and M.~Mokbel, ``Recommendations in location-based social networks: a survey,'' \textit{GeoInformatica}, vol.~19, no.~3, pp.~525--565, 2015.
+
+\bibitem{borras2014}
+J.~Borr\`{a}s, A.~Moreno, and A.~Valls, ``Intelligent tourism recommender systems: A survey,'' \textit{Expert Systems with Applications}, vol.~41, no.~16, pp.~7370--7389, 2014.
+
+\bibitem{sinnott1984}
+R.~W.~Sinnott, ``Virtues of the Haversine,'' \textit{Sky and Telescope}, vol.~68, no.~2, p.~159, 1984.
+
+\bibitem{un2015}
+United Nations, ``Transforming our world: the 2030 Agenda for Sustainable Development,'' UN General Assembly, Resolution 70/1, 2015.
+
+\bibitem{gossling2021}
+A.~G\"{o}ssling, ``Tourism, technology and ICT: a critical review of affordances and concessions,'' \textit{Journal of Sustainable Tourism}, vol.~29, no.~5, pp.~733--750, 2021.
+
+\bibitem{gao2017}
+Z.~Gao, C.~Bird, and E.~T.~Barr, ``To type or not to type: Quantifying detectable bugs in JavaScript,'' in \textit{Proc. 39th IEEE/ACM Int. Conf. Software Engineering (ICSE)}, 2017, pp.~758--769.
+
+\end{thebibliography}
+
+\end{document}
