@@ -89,7 +89,7 @@ export default function ExplorePage() {
           className="flex items-center justify-between"
         >
           <div>
-            <h1 className="font-display text-3xl font-extrabold text-foreground">Explore</h1>
+            <h1 className="font-display text-3xl font-extrabold text-foreground">Explore Bangalore</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
               <MapPin className="w-3.5 h-3.5" />
               {error ? "Using default location (Bangalore)" : "Based on your location"}
