@@ -1,5 +1,5 @@
 import { Place, categoryConfig } from "@/data/places";
-import { Heart, MapPin, Navigation, Leaf, Star } from "lucide-react";
+import { Heart, MapPin, Navigation, Leaf, Star, Clock } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { motion } from "framer-motion";
 
@@ -72,11 +72,29 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
       <div className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{place.description}</p>
 
-        {place.distance !== undefined && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="w-3 h-3" />
-            {place.distance < 1 ? `${(place.distance * 1000).toFixed(0)}m away` : `${place.distance.toFixed(1)}km away`}
-          </div>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          {place.distance !== undefined && (
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              {place.distance < 1 ? `${(place.distance * 1000).toFixed(0)}m` : `${place.distance.toFixed(1)}km`}
+            </span>
+          )}
+          {place.bestTime && (
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {place.bestTime.split('(')[0].split(';')[0].trim().slice(0, 20)}
+            </span>
+          )}
+          {place.entryFee && (
+            <span className="text-primary font-semibold">{place.entryFee.split(',')[0]}</span>
+          )}
+        </div>
+
+        {/* Food nearby preview */}
+        {place.foodNearby && place.foodNearby.length > 0 && (
+          <p className="text-xs text-muted-foreground/80 truncate">
+            🍴 {place.foodNearby.slice(0, 2).join(' · ')}
+          </p>
         )}
 
         <div className="flex items-center gap-2 pt-1">
