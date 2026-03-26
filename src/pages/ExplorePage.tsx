@@ -16,7 +16,7 @@ export default function ExplorePage() {
   const { user } = useApp();
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<PlaceCategory[]>([]);
-  const [maxDistance, setMaxDistance] = useState(100);
+  const [maxDistance, setMaxDistance] = useState(500);
   const [ecoOnly, setEcoOnly] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [selectedExternal, setSelectedExternal] = useState<ExternalPlace | null>(null);
@@ -91,11 +91,9 @@ export default function ExplorePage() {
       setLastExternalQuery("");
       return;
     }
-    // Trigger external search when local results are few
-    if (filtered.length < 3) {
-      const timer = setTimeout(() => triggerExternalSearch(search.trim()), 600);
-      return () => clearTimeout(timer);
-    }
+    // Trigger external search when local results are few or always for search
+    const timer = setTimeout(() => triggerExternalSearch(search.trim()), 600);
+    return () => clearTimeout(timer);
   }, [search, filtered.length, triggerExternalSearch]);
 
   const toggleCategory = (cat: PlaceCategory) => {
