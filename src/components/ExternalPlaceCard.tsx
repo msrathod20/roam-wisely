@@ -64,15 +64,12 @@ export default function ExternalPlaceCard({ place, onSelect }: Props) {
 
         <div className="flex items-center gap-2 pt-1">
           {place.lat !== 0 && (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`, '_blank', 'noopener,noreferrer'); }}
               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:shadow-md hover:shadow-primary/20 transition-all"
             >
               <Navigation className="w-3.5 h-3.5" /> Directions
-            </a>
+            </button>
           )}
           {place.wikiUrl && (
             <a
