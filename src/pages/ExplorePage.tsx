@@ -16,7 +16,7 @@ export default function ExplorePage() {
   const { user } = useApp();
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<PlaceCategory[]>([]);
-  const [maxDistance, setMaxDistance] = useState(500);
+  const [maxDistance, setMaxDistance] = useState(50);
   const [ecoOnly, setEcoOnly] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [selectedExternal, setSelectedExternal] = useState<ExternalPlace | null>(null);
