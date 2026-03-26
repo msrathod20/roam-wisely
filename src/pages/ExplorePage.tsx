@@ -1,12 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/places";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import PlaceCard from "@/components/PlaceCard";
 import PlaceDetail from "@/components/PlaceDetail";
+import ExternalPlaceCard from "@/components/ExternalPlaceCard";
+import ExternalPlaceDetail from "@/components/ExternalPlaceDetail";
 import FilterBar from "@/components/FilterBar";
 import { useApp } from "@/context/AppContext";
-import { Loader2, MapPin, Sparkles } from "lucide-react";
+import { Loader2, MapPin, Sparkles, Globe } from "lucide-react";
 import { motion } from "framer-motion";
+import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 
 export default function ExplorePage() {
   const { latitude, longitude, loading, error } = useGeolocation();
@@ -16,6 +19,12 @@ export default function ExplorePage() {
   const [maxDistance, setMaxDistance] = useState(100);
   const [ecoOnly, setEcoOnly] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [selectedExternal, setSelectedExternal] = useState<ExternalPlace | null>(null);
+
+  // External search state
+  const [externalResults, setExternalResults] = useState<ExternalPlace[]>([]);
+  const [externalLoading, setExternalLoading] = useState(false);
+  const [lastExternalQuery, setLastExternalQuery] = useState("");
 
   const userLat = latitude ?? 12.9716;
   const userLng = longitude ?? 77.5946;
@@ -29,16 +38,19 @@ export default function ExplorePage() {
 
   const filtered = useMemo(() => {
     let result = placesWithDistance;
-
     const hasSearch = search.trim().length > 0;
     if (hasSearch) {
       const q = search.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.thingsToTry.some(t => t.toLowerCase().includes(q)) ||
+        (p.foodNearby || []).some(f => f.toLowerCase().includes(q))
+      );
     }
     if (selectedCategories.length > 0) {
       result = result.filter(p => selectedCategories.includes(p.category));
     }
-    // Only apply distance filter when not searching — so search results always show
     if (!hasSearch) {
       result = result.filter(p => (p.distance ?? 0) <= maxDistance);
     }
@@ -54,9 +66,37 @@ export default function ExplorePage() {
     } else {
       result.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
     }
-
     return result;
   }, [placesWithDistance, search, selectedCategories, maxDistance, ecoOnly, user]);
+
+  // Debounced external search when local results are few
+  const triggerExternalSearch = useCallback(async (query: string) => {
+    if (query.length < 3 || query === lastExternalQuery) return;
+    setExternalLoading(true);
+    setLastExternalQuery(query);
+    try {
+      const results = await searchExternalPlaces(query);
+      setExternalResults(results);
+    } catch {
+      setExternalResults([]);
+    } finally {
+      setExternalLoading(false);
+    }
+  }, [lastExternalQuery]);
+
+  useEffect(() => {
+    const hasSearch = search.trim().length >= 3;
+    if (!hasSearch) {
+      setExternalResults([]);
+      setLastExternalQuery("");
+      return;
+    }
+    // Trigger external search when local results are few
+    if (filtered.length < 3) {
+      const timer = setTimeout(() => triggerExternalSearch(search.trim()), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [search, filtered.length, triggerExternalSearch]);
 
   const toggleCategory = (cat: PlaceCategory) => {
     setSelectedCategories(prev =>
@@ -79,6 +119,8 @@ export default function ExplorePage() {
       </div>
     );
   }
+
+  const showExternalSection = search.trim().length >= 3 && (externalResults.length > 0 || externalLoading);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -116,19 +158,24 @@ export default function ExplorePage() {
       </div>
 
       <div className="flex-1 container pb-8">
-        {filtered.length === 0 ? (
+        {/* Local Results */}
+        {filtered.length === 0 && !showExternalSection ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20"
+            className="text-center py-12"
           >
             <div className="w-20 h-20 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
               <span className="text-4xl">🗺️</span>
             </div>
-            <p className="font-display font-bold text-foreground text-lg">No places found</p>
-            <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters or increasing the radius</p>
+            <p className="font-display font-bold text-foreground text-lg">No local places found</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {search.trim().length < 3
+                ? "Try adjusting your filters or increasing the radius"
+                : "Searching the web for results..."}
+            </p>
           </motion.div>
-        ) : (
+        ) : filtered.length > 0 ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((place, i) => (
               <motion.div
@@ -141,10 +188,48 @@ export default function ExplorePage() {
               </motion.div>
             ))}
           </div>
+        ) : null}
+
+        {/* External / Web Results */}
+        {showExternalSection && (
+          <div className={filtered.length > 0 ? "mt-10" : ""}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-2 mb-5"
+            >
+              <Globe className="w-5 h-5 text-accent-foreground" />
+              <h2 className="font-display text-xl font-bold text-foreground">
+                Web Results for "{search.trim()}"
+              </h2>
+              {externalLoading && <Loader2 className="w-4 h-4 animate-spin text-primary ml-2" />}
+            </motion.div>
+
+            {externalResults.length > 0 ? (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {externalResults.map((place, i) => (
+                  <motion.div
+                    key={place.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    <ExternalPlaceCard place={place} onSelect={setSelectedExternal} />
+                  </motion.div>
+                ))}
+              </div>
+            ) : externalLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Searching Wikipedia & OpenStreetMap...</p>
+              </div>
+            ) : null}
+          </div>
         )}
       </div>
 
       <PlaceDetail place={selectedPlace} onClose={() => setSelectedPlace(null)} />
+      <ExternalPlaceDetail place={selectedExternal} onClose={() => setSelectedExternal(null)} />
     </div>
   );
 }
