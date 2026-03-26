@@ -82,11 +82,27 @@ export default function RegisterPage() {
             <div className="relative">
               <input type={showPass ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring pr-10 transition-shadow"
-                placeholder="••••••" required />
+                placeholder="••••••••" required />
               <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {password.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {[
+                  { test: password.length >= 8, label: "At least 8 characters" },
+                  { test: /[A-Z]/.test(password), label: "One uppercase letter" },
+                  { test: /[a-z]/.test(password), label: "One lowercase letter" },
+                  { test: /[0-9]/.test(password), label: "One number" },
+                  { test: /[^A-Za-z0-9]/.test(password), label: "One special character" },
+                ].map(({ test, label }) => (
+                  <div key={label} className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${test ? "text-green-600" : "text-muted-foreground"}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${test ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                    {label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <label className="text-sm font-bold text-foreground block mb-2.5">Your Interests</label>
