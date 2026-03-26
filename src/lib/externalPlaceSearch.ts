@@ -132,6 +132,7 @@ export async function searchExternalPlaces(query: string): Promise<ExternalPlace
       const description = pageData.extract.slice(0, 300) + (pageData.extract.length > 300 ? '...' : '');
       const snippet = stripHtml(wiki.snippet);
       
+      const cat = inferCategory('', '', description);
       seenNames.add(wiki.title.toLowerCase());
       places.push({
         id: `ext-wiki-${wiki.pageid}`,
@@ -141,10 +142,10 @@ export async function searchExternalPlaces(query: string): Promise<ExternalPlace
         history: pageData.extract.length > 300 ? pageData.extract.slice(300, 800) : undefined,
         thingsToTry: ['Explore the area', 'Take photos', 'Learn local history'],
         foodNearby: [],
-        category: inferCategory('', '', description),
+        category: cat,
         lat: finalLat,
         lng: finalLon,
-        image: pageData.thumbnail?.source || `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800`,
+        image: pageData.thumbnail?.source || categoryFallbackImages[cat] || categoryFallbackImages.attraction,
         rating: 4.0 + Math.random() * 0.8,
         isEcoFriendly: false,
         isExternal: true,
@@ -158,6 +159,7 @@ export async function searchExternalPlaces(query: string): Promise<ExternalPlace
       if (seenNames.has(name.toLowerCase())) continue;
       if (places.length >= 8) break;
 
+      const cat = inferCategory(nom.type, nom.class, nom.display_name);
       seenNames.add(name.toLowerCase());
       places.push({
         id: `ext-nom-${nom.place_id}`,
@@ -165,10 +167,10 @@ export async function searchExternalPlaces(query: string): Promise<ExternalPlace
         description: nom.display_name,
         whyFamous: `Located at ${nom.display_name.split(',').slice(0, 3).join(',')}`,
         thingsToTry: ['Visit and explore', 'Check local attractions'],
-        category: inferCategory(nom.type, nom.class, nom.display_name),
+        category: cat,
         lat: parseFloat(nom.lat),
         lng: parseFloat(nom.lon),
-        image: `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800`,
+        image: categoryFallbackImages[cat] || categoryFallbackImages.attraction,
         rating: 3.5 + Math.random(),
         isEcoFriendly: false,
         isExternal: true,
