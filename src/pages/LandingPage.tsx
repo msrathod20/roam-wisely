@@ -82,15 +82,15 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="relative -mt-12 z-10">
+      <section className="relative -mt-8 md:-mt-12 z-10">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-card rounded-2xl shadow-lg border border-border p-6 md:p-8"
+            className="bg-card rounded-2xl shadow-lg border border-border p-5 sm:p-6 md:p-8"
           >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {stats.map((s, i) => (
                 <motion.div
                   key={s.label}
@@ -98,11 +98,11 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="text-center"
+                  className="text-center p-2"
                 >
-                  <s.icon className="w-5 h-5 mx-auto text-primary mb-2" />
-                  <div className="text-3xl md:text-4xl font-display font-extrabold text-foreground">{s.value}</div>
-                  <div className="text-sm text-muted-foreground mt-0.5">{s.label}</div>
+                  <s.icon className="w-5 h-5 mx-auto text-primary mb-1.5" />
+                  <div className="text-2xl sm:text-3xl md:text-4xl font-display font-extrabold text-foreground leading-tight">{s.value}</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground mt-1">{s.label}</div>
                 </motion.div>
               ))}
             </div>
