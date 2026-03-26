@@ -31,7 +31,7 @@ export default function ExternalPlaceDetail({ place, onClose }: Props) {
         >
           {/* Hero */}
           <div className="relative h-56 sm:h-64">
-            <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
+            <img src={place.image} alt={place.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }} />
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
             <button
               onClick={onClose}

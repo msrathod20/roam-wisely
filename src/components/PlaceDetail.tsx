@@ -30,7 +30,7 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
         >
           {/* Hero Image */}
           <div className="relative h-64 sm:h-72">
-            <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
+            <img src={place.image} alt={place.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }} />
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
             <button
               onClick={onClose}
