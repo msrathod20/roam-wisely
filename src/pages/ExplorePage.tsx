@@ -91,11 +91,9 @@ export default function ExplorePage() {
       setLastExternalQuery("");
       return;
     }
-    // Trigger external search when local results are few
-    if (filtered.length < 3) {
-      const timer = setTimeout(() => triggerExternalSearch(search.trim()), 600);
-      return () => clearTimeout(timer);
-    }
+    // Trigger external search when local results are few or always for search
+    const timer = setTimeout(() => triggerExternalSearch(search.trim()), 600);
+    return () => clearTimeout(timer);
   }, [search, filtered.length, triggerExternalSearch]);
 
   const toggleCategory = (cat: PlaceCategory) => {
