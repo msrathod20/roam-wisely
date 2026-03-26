@@ -414,9 +414,6 @@ export default function LandingPage() {
                 <span className="text-xs text-muted-foreground block">Beyond Horizons</span>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground text-center">
-              Final Year Project • Dayananda Sagar College of Engineering • 2025
-            </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <Link to="/explore" className="hover:text-primary transition-colors">Explore</Link>
               <Link to="/login" className="hover:text-primary transition-colors">Sign In</Link>
