@@ -100,15 +100,13 @@ export default function ExternalPlaceDetail({ place, onClose }: Props) {
 
             <div className="flex flex-col gap-3">
               {place.lat !== 0 && (
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`, '_blank', 'noopener,noreferrer')}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold hover:shadow-lg hover:shadow-primary/20 transition-all"
                 >
                   <Navigation className="w-4 h-4" /> Get Directions
                   <ExternalLink className="w-3 h-3 ml-1 opacity-60" />
-                </a>
+                </button>
               )}
               {place.wikiUrl && (
                 <a

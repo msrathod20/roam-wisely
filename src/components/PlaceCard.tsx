@@ -98,15 +98,12 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
         )}
 
         <div className="flex items-center gap-2 pt-1">
-          <a
-            href={directionsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+          <button
+            onClick={(e) => { e.stopPropagation(); window.open(directionsUrl, '_blank', 'noopener,noreferrer'); }}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:shadow-md hover:shadow-primary/20 transition-all"
           >
             <Navigation className="w-3.5 h-3.5" /> Directions
-          </a>
+          </button>
           {user && (
             <button
               onClick={(e) => { e.stopPropagation(); markVisited(place.id); }}
