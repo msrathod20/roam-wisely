@@ -33,6 +33,17 @@ interface WikiPageResult {
   fullurl: string;
 }
 
+const categoryFallbackImages: Record<string, string> = {
+  food: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80',
+  cafe: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&q=80',
+  nature: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80',
+  heritage: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80',
+  nightlife: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80',
+  activities: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&q=80',
+  attraction: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80',
+  eco: 'https://images.unsplash.com/photo-1500049242364-5f500807cdd7?w=600&q=80',
+};
+
 function inferCategory(type: string, className: string, description: string): Place['category'] {
   const desc = (type + ' ' + className + ' ' + description).toLowerCase();
   if (desc.match(/restaurant|food|cafe|bakery|fast_food|bar|pub/)) return 'food';
@@ -62,7 +73,7 @@ async function searchWikipedia(query: string): Promise<WikiSearchResult[]> {
 }
 
 async function getWikiPage(title: string): Promise<WikiPageResult | null> {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=extracts|pageimages|coordinates|info&exintro=true&explaintext=true&piprop=thumbnail&pithumbsize=800&inprop=url&format=json&origin=*`;
+  const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=extracts|pageimages|coordinates|info&exintro=true&explaintext=true&piprop=thumbnail&pithumbsize=1200&inprop=url&format=json&origin=*`;
   const res = await fetch(url);
   if (!res.ok) return null;
   const data = await res.json();
