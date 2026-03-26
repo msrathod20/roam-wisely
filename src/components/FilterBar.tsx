@@ -12,18 +12,18 @@ interface FilterBarProps {
   onEcoToggle: () => void;
 }
 
-const DISTANCES = [1, 5, 10, 25, 50, 100];
+const DISTANCES = [5, 10, 25, 50, 100, 200, 500];
 
 export default function FilterBar({
   search, onSearchChange, selectedCategories, onCategoryToggle,
   maxDistance, onMaxDistanceChange, ecoOnly, onEcoToggle,
 }: FilterBarProps) {
-  const hasFilters = selectedCategories.length > 0 || ecoOnly || maxDistance !== 100;
+  const hasFilters = selectedCategories.length > 0 || ecoOnly || maxDistance !== 500;
 
   const clearAll = () => {
     onSearchChange("");
     selectedCategories.forEach(c => onCategoryToggle(c));
-    onMaxDistanceChange(100);
+    onMaxDistanceChange(500);
     if (ecoOnly) onEcoToggle();
   };
 
