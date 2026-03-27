@@ -24,11 +24,11 @@ export default function Navbar() {
             <Compass className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="hidden sm:block">
-            <span className={`font-display text-lg font-bold ${isLanding ? "text-primary-foreground" : "text-foreground"}`}>
+            <span className={`font-display text-lg font-bold ${isLanding ? "text-foreground" : "text-foreground"}`}>
               Explorer
             </span>
             <span className={`text-[10px] block -mt-0.5 font-medium tracking-wider uppercase ${
-              isLanding ? "text-primary-foreground/60" : "text-muted-foreground"
+              isLanding ? "text-muted-foreground" : "text-muted-foreground"
             }`}>
               Beyond Horizons
             </span>
