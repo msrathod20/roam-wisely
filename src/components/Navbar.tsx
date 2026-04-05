@@ -50,6 +50,20 @@ export default function Navbar() {
             <span className="hidden sm:inline">Explore</span>
           </Link>
 
+          <Link
+            to="/trip-planner"
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+              isActive("/trip-planner")
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : isLanding
+                  ? "text-primary-foreground/80 hover:bg-primary-foreground/10"
+                  : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">AI Planner</span>
+          </Link>
+
           {user && (
             <>
               <Link
