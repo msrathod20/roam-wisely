@@ -12,6 +12,7 @@ import RegisterPage from "@/pages/RegisterPage";
 import FavoritesPage from "@/pages/FavoritesPage";
 import GroupsPage from "@/pages/GroupsPage";
 import ProfilePage from "@/pages/ProfilePage";
+import TripPlannerPage from "@/pages/TripPlannerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/explore" element={<ExplorePage />} />
+              <Route path="/trip-planner" element={<TripPlannerPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/favorites" element={<FavoritesPage />} />

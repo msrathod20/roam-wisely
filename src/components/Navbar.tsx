@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Compass, Map, User, LogOut, Heart, Users } from "lucide-react";
+import { Compass, Map, User, LogOut, Heart, Users, Sparkles } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { motion } from "framer-motion";
 
