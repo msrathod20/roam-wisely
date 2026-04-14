@@ -1,6 +1,8 @@
 import { Place, categoryConfig } from "@/data/places";
 import { X, Star, MapPin, Navigation, Leaf, ExternalLink, Clock, Ticket, Utensils, History, Lightbulb, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
+import { getGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
 
 interface PlaceDetailProps {
   place: Place | null;
@@ -10,6 +12,7 @@ interface PlaceDetailProps {
 export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
   if (!place) return null;
   const cat = categoryConfig[place.category];
+  const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
 
   return (
     <AnimatePresence>
@@ -30,7 +33,7 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
         >
           {/* Hero Image */}
           <div className="relative h-64 sm:h-72">
-            <img src={place.image} alt={place.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }} />
+            <img src={photoUrl} alt={place.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }} />
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
             <button
               onClick={onClose}
