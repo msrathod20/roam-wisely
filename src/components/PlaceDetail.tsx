@@ -158,7 +158,7 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
 
             {/* Directions Button */}
             <button
-              onClick={() => window.open(getGoogleMapsDirectionsUrl(place.lat, place.lng, place.name), '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(getGoogleMapsDirectionsUrl(place.lat, place.lng), '_blank', 'noopener,noreferrer')}
               className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold hover:shadow-lg hover:shadow-primary/20 transition-all duration-300"
             >
               <Navigation className="w-4 h-4" /> Get Directions

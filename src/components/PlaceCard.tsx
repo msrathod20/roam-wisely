@@ -16,7 +16,7 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
   const isFav = favorites.includes(place.id);
   const visited = visitedPlaces.includes(place.id);
   const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
-  const directionsUrl = getGoogleMapsDirectionsUrl(place.lat, place.lng, place.name);
+  const directionsUrl = getGoogleMapsDirectionsUrl(place.lat, place.lng);
 
   return (
     <motion.article
