@@ -8,15 +8,16 @@ const loader = new Loader({
   libraries: ["places"],
 });
 
-let placesService: google.maps.places.PlacesService | null = null;
+let placesService: any = null;
 let loadPromise: Promise<void> | null = null;
 
-export async function getPlacesService(): Promise<google.maps.places.PlacesService> {
+export async function getPlacesService(): Promise<any> {
   if (placesService) return placesService;
 
   if (!loadPromise) {
     loadPromise = loader.importLibrary("places").then(() => {
       const div = document.createElement("div");
+      // @ts-ignore - google.maps loaded dynamically
       placesService = new google.maps.places.PlacesService(div);
     });
   }
@@ -25,7 +26,7 @@ export async function getPlacesService(): Promise<google.maps.places.PlacesServi
   return placesService!;
 }
 
-// Cache for photo URLs to avoid redundant API calls
+// Cache for photo URLs
 const photoCache = new Map<string, string>();
 
 export async function getPlacePhotoUrl(
@@ -40,19 +41,19 @@ export async function getPlacePhotoUrl(
     const service = await getPlacesService();
 
     return new Promise((resolve) => {
-      const request: google.maps.places.FindPlaceFromQueryRequest = {
+      const request: any = {
         query: `${placeName} Bangalore Karnataka`,
         fields: ["photos", "place_id"],
-        ...(lat && lng
-          ? {
-              locationBias: new google.maps.LatLng(lat, lng),
-            }
-          : {}),
       };
 
-      service.findPlaceFromQuery(request, (results, status) => {
+      if (lat && lng) {
+        // @ts-ignore
+        request.locationBias = new google.maps.LatLng(lat, lng);
+      }
+
+      service.findPlaceFromQuery(request, (results: any, status: string) => {
         if (
-          status === google.maps.places.PlacesServiceStatus.OK &&
+          status === "OK" &&
           results &&
           results[0]?.photos &&
           results[0].photos.length > 0
@@ -82,12 +83,4 @@ export function getGoogleMapsDirectionsUrl(
     ? encodeURIComponent(placeName)
     : `${destLat},${destLng}`;
   return `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
-}
-
-export function getGoogleMapsSearchUrl(
-  placeName: string,
-  lat: number,
-  lng: number
-): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeName)}&query_place_id=&center=${lat},${lng}`;
 }
