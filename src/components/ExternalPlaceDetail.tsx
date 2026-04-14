@@ -2,6 +2,8 @@ import { ExternalPlace } from "@/lib/externalPlaceSearch";
 import { X, Star, MapPin, Navigation, ExternalLink, Clock, Sparkles, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { categoryConfig } from "@/data/places";
+import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
+import { getGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
 
 interface Props {
   place: ExternalPlace | null;
@@ -11,6 +13,7 @@ interface Props {
 export default function ExternalPlaceDetail({ place, onClose }: Props) {
   if (!place) return null;
   const cat = categoryConfig[place.category];
+  const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
 
   return (
     <AnimatePresence>
@@ -31,7 +34,7 @@ export default function ExternalPlaceDetail({ place, onClose }: Props) {
         >
           {/* Hero */}
           <div className="relative h-56 sm:h-64">
-            <img src={place.image} alt={place.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }} />
+            <img src={photoUrl} alt={place.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }} />
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
             <button
               onClick={onClose}
@@ -101,7 +104,7 @@ export default function ExternalPlaceDetail({ place, onClose }: Props) {
             <div className="flex flex-col gap-3">
               {place.lat !== 0 && (
                 <button
-                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`, '_blank', 'noopener,noreferrer')}
+                  onClick={() => window.open(getGoogleMapsDirectionsUrl(place.lat, place.lng, place.name), '_blank', 'noopener,noreferrer')}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold hover:shadow-lg hover:shadow-primary/20 transition-all"
                 >
                   <Navigation className="w-4 h-4" /> Get Directions
