@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
 import Navbar from "@/components/Navbar";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import LandingPage from "@/pages/LandingPage";
 import ExplorePage from "@/pages/ExplorePage";
 import LoginPage from "@/pages/LoginPage";
@@ -28,13 +29,13 @@ const App = () => (
             <Navbar />
             <Routes>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/explore" element={<ExplorePage />} />
-              <Route path="/trip-planner" element={<TripPlannerPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/favorites" element={<FavoritesPage />} />
-              <Route path="/groups" element={<GroupsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
+              <Route path="/trip-planner" element={<ProtectedRoute><TripPlannerPage /></ProtectedRoute>} />
+              <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+              <Route path="/groups" element={<ProtectedRoute><GroupsPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
