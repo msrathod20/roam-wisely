@@ -104,7 +104,7 @@ export default function ExternalPlaceDetail({ place, onClose }: Props) {
             <div className="flex flex-col gap-3">
               {place.lat !== 0 && (
                 <button
-                  onClick={() => window.open(getGoogleMapsDirectionsUrl(place.lat, place.lng, place.name), '_blank', 'noopener,noreferrer')}
+                  onClick={() => window.open(getGoogleMapsDirectionsUrl(place.lat, place.lng), '_blank', 'noopener,noreferrer')}
                   className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold hover:shadow-lg hover:shadow-primary/20 transition-all"
                 >
                   <Navigation className="w-4 h-4" /> Get Directions
