@@ -2,6 +2,7 @@ import { ExternalPlace } from "@/lib/externalPlaceSearch";
 import { categoryConfig } from "@/data/places";
 import { MapPin, Navigation, Star, Globe } from "lucide-react";
 import { motion } from "framer-motion";
+import { usePlacePhoto } from "@/hooks/usePlacePhoto";
 
 interface Props {
   place: ExternalPlace;
@@ -10,6 +11,9 @@ interface Props {
 
 export default function ExternalPlaceCard({ place, onSelect }: Props) {
   const cat = categoryConfig[place.category];
+  
+  // Fetch real place image from Google Places API (with fallback)
+  const { photoUrl } = usePlacePhoto(place.name, place.lat, place.lng, place.image);
 
   return (
     <motion.article
@@ -25,11 +29,11 @@ export default function ExternalPlaceCard({ place, onSelect }: Props) {
     >
       <div className="relative h-48 overflow-hidden">
         <img
-          src={place.image}
+          src={photoUrl || place.image}
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
-          onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }}
+          onError={(e) => { (e.target as HTMLImageElement).src = place.image; }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
 

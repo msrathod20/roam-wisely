@@ -2,6 +2,7 @@ import { Place, categoryConfig } from "@/data/places";
 import { Heart, MapPin, Navigation, Leaf, Star, Clock } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { motion } from "framer-motion";
+import { usePlacePhoto } from "@/hooks/usePlacePhoto";
 
 interface PlaceCardProps {
   place: Place;
@@ -13,6 +14,9 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
   const cat = categoryConfig[place.category];
   const isFav = favorites.includes(place.id);
   const visited = visitedPlaces.includes(place.id);
+  
+  // Fetch real place photo from Google Places API (with Wikipedia fallback)
+  const { photoUrl } = usePlacePhoto(place.name, place.lat, place.lng, place.image);
 
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
 
@@ -30,11 +34,11 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
     >
       <div className="relative h-48 overflow-hidden">
         <img
-          src={place.image}
+          src={photoUrl || place.image}
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
-          onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }}
+          onError={(e) => { (e.target as HTMLImageElement).src = place.image; }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
 

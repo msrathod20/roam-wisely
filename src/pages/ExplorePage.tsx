@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/places";
+import { getDistance, PlaceCategory, Place } from "@/data/places";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useNearbyPlaces } from "@/hooks/useNearbyPlaces";
 import PlaceCard from "@/components/PlaceCard";
 import PlaceDetail from "@/components/PlaceDetail";
 import ExternalPlaceCard from "@/components/ExternalPlaceCard";
@@ -26,19 +27,13 @@ export default function ExplorePage() {
   const [externalLoading, setExternalLoading] = useState(false);
   const [lastExternalQuery, setLastExternalQuery] = useState("");
 
-  const userLat = latitude ?? 12.9716;
-  const userLng = longitude ?? 77.5946;
-
-  const placesWithDistance = useMemo(() => {
-    return BANGALORE_PLACES.map((p) => ({
-      ...p,
-      distance: getDistance(userLat, userLng, p.lat, p.lng),
-    }));
-  }, [userLat, userLng]);
+  // Fetch nearby places using Google Places API
+  const { places: nearbyPlaces, loading: placesLoading } = useNearbyPlaces(latitude, longitude);
 
   const filtered = useMemo(() => {
-    let result = placesWithDistance;
+    let result = nearbyPlaces;
     const hasSearch = search.trim().length > 0;
+    
     if (hasSearch) {
       const q = search.toLowerCase();
       result = result.filter(p =>
@@ -48,12 +43,14 @@ export default function ExplorePage() {
         (p.foodNearby || []).some(f => f.toLowerCase().includes(q))
       );
     }
+    
     if (selectedCategories.length > 0) {
       result = result.filter(p => selectedCategories.includes(p.category));
     }
-    if (!hasSearch) {
-      result = result.filter(p => (p.distance ?? 0) <= maxDistance);
-    }
+    
+    // Always apply distance filter to nearby results (they're already within 15km by default)
+    result = result.filter(p => (p.distance ?? 0) <= maxDistance);
+    
     if (ecoOnly) result = result.filter(p => p.isEcoFriendly);
 
     if (user?.interests) {
@@ -67,7 +64,7 @@ export default function ExplorePage() {
       result.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
     }
     return result;
-  }, [placesWithDistance, search, selectedCategories, maxDistance, ecoOnly, user]);
+  }, [nearbyPlaces, search, selectedCategories, maxDistance, ecoOnly, user]);
 
   // Debounced external search when local results are few
   const triggerExternalSearch = useCallback(async (query: string) => {
@@ -102,7 +99,7 @@ export default function ExplorePage() {
     );
   };
 
-  if (loading) {
+  if (loading || placesLoading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
@@ -112,11 +109,28 @@ export default function ExplorePage() {
           <div>
             <p className="font-display font-bold text-foreground">Detecting Location</p>
             <p className="text-sm text-muted-foreground">Finding the best spots near you...</p>
+            {latitude && longitude && (
+              <p className="text-xs text-muted-foreground mt-2 font-mono">
+                Your location: {latitude.toFixed(4)}, {longitude.toFixed(4)}
+              </p>
+            )}
           </div>
         </div>
       </div>
     );
   }
+
+  // Debug: Log place coordinates
+  useEffect(() => {
+    if (nearbyPlaces.length > 0 && nearbyPlaces[0].distance) {
+      console.log('Place Debug Info:');
+      nearbyPlaces.slice(0, 3).forEach((place, i) => {
+        console.log(`${i + 1}. ${place.name}`);
+        console.log(`   Coords: ${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}`);
+        console.log(`   Distance: ${place.distance?.toFixed(2)}km`);
+      });
+    }
+  }, [nearbyPlaces]);
 
   const showExternalSection = search.trim().length >= 3 && (externalResults.length > 0 || externalLoading);
 
@@ -129,10 +143,10 @@ export default function ExplorePage() {
           className="flex items-center justify-between"
         >
           <div>
-            <h1 className="font-display text-3xl font-extrabold text-foreground">Explore Bangalore</h1>
+            <h1 className="font-display text-3xl font-extrabold text-foreground">Explore Nearby</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
               <MapPin className="w-3.5 h-3.5" />
-              {error ? "Using default location (Bangalore)" : "Based on your location"}
+              {error ? "Using your current location" : "Based on your location"}
               <span className="text-primary font-semibold">• {filtered.length} places</span>
             </p>
           </div>
