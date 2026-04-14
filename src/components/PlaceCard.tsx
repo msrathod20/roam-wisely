@@ -2,6 +2,8 @@ import { Place, categoryConfig } from "@/data/places";
 import { Heart, MapPin, Navigation, Leaf, Star, Clock } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { motion } from "framer-motion";
+import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
+import { getGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
 
 interface PlaceCardProps {
   place: Place;
@@ -13,8 +15,8 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
   const cat = categoryConfig[place.category];
   const isFav = favorites.includes(place.id);
   const visited = visitedPlaces.includes(place.id);
-
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`;
+  const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
+  const directionsUrl = getGoogleMapsDirectionsUrl(place.lat, place.lng, place.name);
 
   return (
     <motion.article
@@ -30,7 +32,7 @@ export default function PlaceCard({ place, onSelect }: PlaceCardProps) {
     >
       <div className="relative h-48 overflow-hidden">
         <img
-          src={place.image}
+          src={photoUrl}
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           loading="lazy"

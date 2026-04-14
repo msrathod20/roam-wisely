@@ -2,6 +2,8 @@ import { ExternalPlace } from "@/lib/externalPlaceSearch";
 import { categoryConfig } from "@/data/places";
 import { MapPin, Navigation, Star, Globe } from "lucide-react";
 import { motion } from "framer-motion";
+import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
+import { getGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
 
 interface Props {
   place: ExternalPlace;
@@ -10,6 +12,7 @@ interface Props {
 
 export default function ExternalPlaceCard({ place, onSelect }: Props) {
   const cat = categoryConfig[place.category];
+  const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
 
   return (
     <motion.article
@@ -25,7 +28,7 @@ export default function ExternalPlaceCard({ place, onSelect }: Props) {
     >
       <div className="relative h-48 overflow-hidden">
         <img
-          src={place.image}
+          src={photoUrl}
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
@@ -66,7 +69,7 @@ export default function ExternalPlaceCard({ place, onSelect }: Props) {
         <div className="flex items-center gap-2 pt-1">
           {place.lat !== 0 && (
             <button
-              onClick={(e) => { e.stopPropagation(); window.open(`https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`, '_blank', 'noopener,noreferrer'); }}
+              onClick={(e) => { e.stopPropagation(); window.open(getGoogleMapsDirectionsUrl(place.lat, place.lng, place.name), '_blank', 'noopener,noreferrer'); }}
               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:shadow-md hover:shadow-primary/20 transition-all"
             >
               <Navigation className="w-3.5 h-3.5" /> Directions
