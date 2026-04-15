@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/places";
-import { useGeolocation } from "@/hooks/useGeolocation";
+import { DEFAULT_LAT, DEFAULT_LNG, useGeolocation } from "@/hooks/useGeolocation";
 import PlaceCard from "@/components/PlaceCard";
 import PlaceDetail from "@/components/PlaceDetail";
 import ExternalPlaceCard from "@/components/ExternalPlaceCard";
@@ -26,8 +26,9 @@ export default function ExplorePage() {
   const [externalLoading, setExternalLoading] = useState(false);
   const [lastExternalQuery, setLastExternalQuery] = useState("");
 
-  const userLat = latitude ?? 12.9716;
-  const userLng = longitude ?? 77.5946;
+  const hasPreciseLocation = typeof latitude === "number" && typeof longitude === "number";
+  const userLat = typeof latitude === "number" ? latitude : DEFAULT_LAT;
+  const userLng = typeof longitude === "number" ? longitude : DEFAULT_LNG;
 
   const placesWithDistance = useMemo(() => {
     return BANGALORE_PLACES.map((p) => ({
@@ -132,9 +133,12 @@ export default function ExplorePage() {
             <h1 className="font-display text-3xl font-extrabold text-foreground">Explore Bangalore</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
               <MapPin className="w-3.5 h-3.5" />
-              {error ? "Using default location (Bangalore)" : "Based on your location"}
+              {hasPreciseLocation ? "Based on your location" : "Distances from Bangalore city center"}
               <span className="text-primary font-semibold">• {filtered.length} places</span>
             </p>
+            {!hasPreciseLocation && error && (
+              <p className="text-xs text-muted-foreground mt-1">Enable location access for accurate nearby distances and directions.</p>
+            )}
           </div>
           {user && (
             <div className="badge-primary hidden sm:flex">
@@ -182,7 +186,7 @@ export default function ExplorePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <PlaceCard place={place} onSelect={setSelectedPlace} />
+                <PlaceCard place={place} onSelect={setSelectedPlace} usesPreciseLocation={hasPreciseLocation} />
               </motion.div>
             ))}
           </div>
@@ -226,7 +230,7 @@ export default function ExplorePage() {
         )}
       </div>
 
-      <PlaceDetail place={selectedPlace} onClose={() => setSelectedPlace(null)} />
+      <PlaceDetail place={selectedPlace} onClose={() => setSelectedPlace(null)} usesPreciseLocation={hasPreciseLocation} />
       <ExternalPlaceDetail place={selectedExternal} onClose={() => setSelectedExternal(null)} />
     </div>
   );
