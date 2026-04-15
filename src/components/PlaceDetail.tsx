@@ -3,13 +3,15 @@ import { X, Star, MapPin, Navigation, Leaf, ExternalLink, Clock, Ticket, Utensil
 import { motion, AnimatePresence } from "framer-motion";
 import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
 import { getGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
+import { formatDistanceDetail } from "@/lib/distance";
 
 interface PlaceDetailProps {
   place: Place | null;
   onClose: () => void;
+  usesPreciseLocation?: boolean;
 }
 
-export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
+export default function PlaceDetail({ place, onClose, usesPreciseLocation = true }: PlaceDetailProps) {
   if (!place) return null;
   const cat = categoryConfig[place.category];
   const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
@@ -64,7 +66,7 @@ export default function PlaceDetail({ place, onClose }: PlaceDetailProps) {
                   <>
                     <span className="text-primary-foreground/40">·</span>
                     <MapPin className="w-3 h-3 text-primary-foreground/80" />
-                    <span className="text-primary-foreground text-sm">{place.distance.toFixed(1)}km away</span>
+                    <span className="text-primary-foreground text-sm">{formatDistanceDetail(place.distance, usesPreciseLocation)}</span>
                   </>
                 )}
                 {place.bestTime && (

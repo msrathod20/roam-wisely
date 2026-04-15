@@ -1,32 +1,41 @@
 import { useState, useEffect } from "react";
 
 interface LocationState {
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   error: string | null;
   loading: boolean;
 }
 
 // Default: Bangalore center
-const DEFAULT_LAT = 12.9716;
-const DEFAULT_LNG = 77.5946;
+export const DEFAULT_LAT = 12.9716;
+export const DEFAULT_LNG = 77.5946;
 
 export function useGeolocation() {
   const [location, setLocation] = useState<LocationState>({
-    latitude: DEFAULT_LAT,
-    longitude: DEFAULT_LNG,
+    latitude: null,
+    longitude: null,
     error: null,
-    loading: false,
+    loading: true,
   });
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocation(prev => ({ ...prev, error: "Geolocation not supported" }));
+      setLocation({
+        latitude: null,
+        longitude: null,
+        error: "Geolocation not supported",
+        loading: false,
+      });
       return;
     }
 
+    let cancelled = false;
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (cancelled) return;
+
         setLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
@@ -35,13 +44,21 @@ export function useGeolocation() {
         });
       },
       (err) => {
-        setLocation(prev => ({
-          ...prev,
+        if (cancelled) return;
+
+        setLocation({
+          latitude: null,
+          longitude: null,
           error: err.message,
-        }));
+          loading: false,
+        });
       },
-      { enableHighAccuracy: true, timeout: 5000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
     );
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return location;
