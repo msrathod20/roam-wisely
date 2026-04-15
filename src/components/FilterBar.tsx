@@ -12,7 +12,7 @@ interface FilterBarProps {
   onEcoToggle: () => void;
 }
 
-const DISTANCES = [5, 10, 25, 50];
+const DISTANCES = [5, 10, 25, 50, 100];
 
 export default function FilterBar({
   search, onSearchChange, selectedCategories, onCategoryToggle,
