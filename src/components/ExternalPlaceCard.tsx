@@ -1,18 +1,26 @@
 import { ExternalPlace } from "@/lib/externalPlaceSearch";
-import { categoryConfig } from "@/data/places";
+import { categoryConfig, getDistance } from "@/data/places";
 import { MapPin, Navigation, Star, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
 import { getGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
+import { formatDistanceSummary } from "@/lib/distance";
 
 interface Props {
   place: ExternalPlace;
   onSelect: (place: ExternalPlace) => void;
+  userLat?: number;
+  userLng?: number;
+  usesPreciseLocation?: boolean;
 }
 
-export default function ExternalPlaceCard({ place, onSelect }: Props) {
+export default function ExternalPlaceCard({ place, onSelect, userLat, userLng, usesPreciseLocation = false }: Props) {
   const cat = categoryConfig[place.category];
   const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
+
+  const distance = (userLat && userLng && place.lat !== 0)
+    ? getDistance(userLat, userLng, place.lat, place.lng)
+    : undefined;
 
   return (
     <motion.article
@@ -59,12 +67,14 @@ export default function ExternalPlaceCard({ place, onSelect }: Props) {
       <div className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{place.description}</p>
 
-        {place.lat !== 0 && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <MapPin className="w-3 h-3" />
-            <span>{place.lat.toFixed(2)}°N, {place.lng.toFixed(2)}°E</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+          {distance !== undefined && (
+            <span className="flex items-center gap-1 whitespace-nowrap">
+              <MapPin className="w-3 h-3" />
+              {formatDistanceSummary(distance, usesPreciseLocation)}
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center gap-2 pt-1">
           {place.lat !== 0 && (
