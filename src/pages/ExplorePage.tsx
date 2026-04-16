@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/places";
-import { DEFAULT_LAT, DEFAULT_LNG, useGeolocation } from "@/hooks/useGeolocation";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import PlaceCard from "@/components/PlaceCard";
 import PlaceDetail from "@/components/PlaceDetail";
 import ExternalPlaceCard from "@/components/ExternalPlaceCard";
@@ -33,12 +33,19 @@ export default function ExplorePage() {
   const [lastExternalQuery, setLastExternalQuery] = useState("");
 
   const hasPreciseLocation = typeof latitude === "number" && typeof longitude === "number";
-  const userLat = typeof latitude === "number" ? latitude : DEFAULT_LAT;
-  const userLng = typeof longitude === "number" ? longitude : DEFAULT_LNG;
+  const userLat = hasPreciseLocation ? latitude : null;
+  const userLng = hasPreciseLocation ? longitude : null;
 
   // Fetch nearby places from OSM when location is available
   useEffect(() => {
     if (loading) return;
+    if (!hasPreciseLocation || userLat === null || userLng === null) {
+      setNearbyPlaces([]);
+      setNearbyLoading(false);
+      setLocationName("your area");
+      return;
+    }
+
     setNearbyLoading(true);
     
     // Get location name
@@ -49,10 +56,14 @@ export default function ExplorePage() {
       setNearbyPlaces(places);
       setNearbyLoading(false);
     }).catch(() => setNearbyLoading(false));
-  }, [userLat, userLng, loading, maxDistance]);
+  }, [userLat, userLng, loading, maxDistance, hasPreciseLocation]);
 
   // Combine local DB places (with recalculated distance) + OSM nearby places
   const allPlaces = useMemo(() => {
+    if (!hasPreciseLocation || userLat === null || userLng === null) {
+      return [];
+    }
+
     const localWithDist = BANGALORE_PLACES.map((p) => ({
       ...p,
       distance: getDistance(userLat, userLng, p.lat, p.lng),
@@ -64,7 +75,7 @@ export default function ExplorePage() {
     const osmUnique = nearbyPlaces.filter(p => !localNames.has(p.name.toLowerCase()));
 
     return [...localWithDist, ...osmUnique];
-  }, [userLat, userLng, nearbyPlaces]);
+  }, [userLat, userLng, nearbyPlaces, hasPreciseLocation]);
 
   const filtered = useMemo(() => {
     let result = allPlaces;
@@ -106,9 +117,11 @@ export default function ExplorePage() {
     try {
       const results = await searchExternalPlaces(query);
       // Add distance to external results
-      const withDistance = results.map(r => ({
+       const withDistance = results.map(r => ({
         ...r,
-        distance: r.lat !== 0 ? getDistance(userLat, userLng, r.lat, r.lng) : undefined,
+         distance: hasPreciseLocation && userLat !== null && userLng !== null && r.lat !== 0
+           ? getDistance(userLat, userLng, r.lat, r.lng)
+           : undefined,
       }));
       setExternalResults(withDistance);
     } catch {
@@ -116,7 +129,7 @@ export default function ExplorePage() {
     } finally {
       setExternalLoading(false);
     }
-  }, [lastExternalQuery, userLat, userLng]);
+  }, [lastExternalQuery, userLat, userLng, hasPreciseLocation]);
 
   useEffect(() => {
     const hasSearch = search.trim().length >= 3;
@@ -136,6 +149,11 @@ export default function ExplorePage() {
   };
 
   const handleRefresh = () => {
+    if (!hasPreciseLocation || userLat === null || userLng === null) {
+      setNearbyPlaces([]);
+      return;
+    }
+
     setNearbyLoading(true);
     searchNearbyPlaces(userLat, userLng, maxDistance).then(places => {
       setNearbyPlaces(places);
@@ -237,7 +255,9 @@ export default function ExplorePage() {
             </div>
             <p className="font-display font-bold text-foreground text-lg">No places found nearby</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Try increasing the radius or search for a specific place
+                {hasPreciseLocation
+                  ? "Try increasing the radius or search for a specific place"
+                  : "Enable location access to discover places near your current location"}
             </p>
           </motion.div>
         ) : filtered.length > 0 ? (
@@ -282,8 +302,8 @@ export default function ExplorePage() {
                     <ExternalPlaceCard
                       place={place}
                       onSelect={setSelectedExternal}
-                      userLat={userLat}
-                      userLng={userLng}
+                      userLat={userLat ?? undefined}
+                      userLng={userLng ?? undefined}
                       usesPreciseLocation={hasPreciseLocation}
                     />
                   </motion.div>
