@@ -6,68 +6,41 @@ export interface NearbyPlace extends Place {
   wikiUrl?: string;
 }
 
-// Overpass API categories mapping
-const OSM_QUERIES: Record<string, { tags: string; category: PlaceCategory }[]> = {
-  tourism: [
-    { tags: '"tourism"="attraction"', category: "attraction" },
-    { tags: '"tourism"="museum"', category: "heritage" },
-    { tags: '"tourism"="viewpoint"', category: "nature" },
-    { tags: '"tourism"="zoo"', category: "nature" },
-    { tags: '"tourism"="theme_park"', category: "activities" },
-  ],
-  heritage: [
-    { tags: '"historic"', category: "heritage" },
-    { tags: '"amenity"="place_of_worship"', category: "heritage" },
-  ],
-  nature: [
-    { tags: '"leisure"="park"', category: "nature" },
-    { tags: '"leisure"="garden"', category: "nature" },
-    { tags: '"leisure"="nature_reserve"', category: "nature" },
-    { tags: '"natural"="water"', category: "nature" },
-    { tags: '"waterway"="waterfall"', category: "nature" },
-  ],
-  food: [
-    { tags: '"amenity"="restaurant"', category: "food" },
-    { tags: '"amenity"="cafe"', category: "cafe" },
-  ],
-  activities: [
-    { tags: '"leisure"="sports_centre"', category: "activities" },
-    { tags: '"sport"', category: "activities" },
-    { tags: '"leisure"="water_park"', category: "activities" },
-  ],
-  nightlife: [
-    { tags: '"amenity"="nightclub"', category: "nightlife" },
-    { tags: '"amenity"="bar"', category: "nightlife" },
-  ],
-};
+const OVERPASS_ENDPOINTS = [
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://lz4.overpass-api.de/api/interpreter",
+  "https://overpass-api.de/api/interpreter",
+];
 
-function buildOverpassQuery(lat: number, lng: number, radiusMeters: number): string {
-  const queries: string[] = [];
+function buildOverpassQueries(lat: number, lng: number, radiusKm: number): string[] {
+  const scenicRadius = Math.min(radiusKm, 100) * 1000;
+  const activityRadius = Math.min(radiusKm, 60) * 1000;
+  const foodRadius = Math.min(radiusKm, 35) * 1000;
 
-  // Tourism & attractions
-  queries.push(`node["tourism"~"attraction|museum|viewpoint|zoo|theme_park"](around:${radiusMeters},${lat},${lng});`);
-  queries.push(`way["tourism"~"attraction|museum|viewpoint|zoo|theme_park"](around:${radiusMeters},${lat},${lng});`);
-
-  // Heritage
-  queries.push(`node["historic"](around:${radiusMeters},${lat},${lng});`);
-  queries.push(`way["historic"](around:${radiusMeters},${lat},${lng});`);
-  queries.push(`node["amenity"="place_of_worship"]["name"](around:${radiusMeters},${lat},${lng});`);
-
-  // Nature
-  queries.push(`node["leisure"~"park|garden|nature_reserve"](around:${radiusMeters},${lat},${lng});`);
-  queries.push(`way["leisure"~"park|garden|nature_reserve"](around:${radiusMeters},${lat},${lng});`);
-
-  // Food (popular ones only)
-  queries.push(`node["amenity"="restaurant"]["name"](around:${radiusMeters},${lat},${lng});`);
-  queries.push(`node["amenity"="cafe"]["name"](around:${radiusMeters},${lat},${lng});`);
-
-  // Activities
-  queries.push(`node["leisure"~"sports_centre|water_park"](around:${radiusMeters},${lat},${lng});`);
-
-  // Nightlife
-  queries.push(`node["amenity"~"nightclub|bar"]["name"](around:${radiusMeters},${lat},${lng});`);
-
-  return `[out:json][timeout:15];(${queries.join("")});out center 80;`;
+  return [
+    `[out:json][timeout:20];(
+      nwr["tourism"~"attraction|museum|viewpoint|theme_park|zoo"](around:${scenicRadius},${lat},${lng});
+    );out center;`,
+    `[out:json][timeout:20];(
+      nwr["historic"~"castle|fort|monument|memorial|ruins|archaeological_site"](around:${scenicRadius},${lat},${lng});
+      nwr["amenity"="place_of_worship"]["name"](around:${scenicRadius},${lat},${lng});
+    );out center;`,
+    `[out:json][timeout:20];(
+      nwr["leisure"~"park|garden|nature_reserve"](around:${scenicRadius},${lat},${lng});
+      nwr["natural"~"water|peak|beach"](around:${scenicRadius},${lat},${lng});
+      nwr["waterway"="waterfall"](around:${scenicRadius},${lat},${lng});
+    );out center;`,
+    `[out:json][timeout:20];(
+      nwr["amenity"~"restaurant|cafe|fast_food|food_court"]["name"](around:${foodRadius},${lat},${lng});
+    );out center;`,
+    `[out:json][timeout:20];(
+      nwr["leisure"~"sports_centre|water_park"](around:${activityRadius},${lat},${lng});
+      nwr["sport"](around:${activityRadius},${lat},${lng});
+    );out center;`,
+    `[out:json][timeout:20];(
+      nwr["amenity"~"nightclub|bar|pub"]["name"](around:${foodRadius},${lat},${lng});
+    );out center;`,
+  ];
 }
 
 function inferCategoryFromOSM(tags: Record<string, string>): PlaceCategory {
@@ -76,13 +49,15 @@ function inferCategoryFromOSM(tags: Record<string, string>): PlaceCategory {
   const amenity = tags.amenity || "";
   const leisure = tags.leisure || "";
   const natural = tags.natural || "";
+  const waterway = tags.waterway || "";
+  const sport = tags.sport || "";
 
   if (historic || tourism === "museum" || amenity === "place_of_worship") return "heritage";
-  if (leisure === "park" || leisure === "garden" || leisure === "nature_reserve" || natural) return "nature";
-  if (amenity === "restaurant") return "food";
+  if (leisure === "park" || leisure === "garden" || leisure === "nature_reserve" || natural || waterway === "waterfall") return "nature";
+  if (amenity === "restaurant" || amenity === "fast_food" || amenity === "food_court") return "food";
   if (amenity === "cafe") return "cafe";
-  if (amenity === "nightclub" || amenity === "bar") return "nightlife";
-  if (leisure === "sports_centre" || leisure === "water_park" || tourism === "theme_park") return "activities";
+  if (amenity === "nightclub" || amenity === "bar" || amenity === "pub") return "nightlife";
+  if (leisure === "sports_centre" || leisure === "water_park" || tourism === "theme_park" || sport) return "activities";
   if (tourism === "viewpoint" || tourism === "attraction" || tourism === "zoo") return "attraction";
   return "attraction";
 }
@@ -105,6 +80,36 @@ interface OverpassElement {
   lon?: number;
   center?: { lat: number; lon: number };
   tags?: Record<string, string>;
+}
+
+interface OverpassResponse {
+  elements?: OverpassElement[];
+}
+
+async function fetchOverpassElements(query: string): Promise<OverpassElement[]> {
+  let lastError: unknown = null;
+
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(query)}`,
+      });
+
+      if (!res.ok) {
+        lastError = new Error(`Overpass request failed with ${res.status}`);
+        continue;
+      }
+
+      const data = (await res.json()) as OverpassResponse;
+      return data.elements || [];
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Overpass API failed");
 }
 
 // Fetch Wikipedia image for a place
@@ -177,20 +182,11 @@ export async function searchNearbyPlaces(
     return cached.places;
   }
 
-  const radiusMeters = radiusKm * 1000;
-  const query = buildOverpassQuery(userLat, userLng, radiusMeters);
+  const queries = buildOverpassQueries(userLat, userLng, radiusKm);
 
   try {
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `data=${encodeURIComponent(query)}`,
-    });
-
-    if (!res.ok) throw new Error("Overpass API failed");
-
-    const data = await res.json();
-    const elements: OverpassElement[] = data.elements || [];
+    const responses = await Promise.allSettled(queries.map((query) => fetchOverpassElements(query)));
+    const elements = responses.flatMap((result) => result.status === "fulfilled" ? result.value : []);
 
     const seenNames = new Set<string>();
     const places: NearbyPlace[] = [];
@@ -216,7 +212,7 @@ export async function searchNearbyPlaces(
       if (distance > radiusKm) continue;
 
       const description = tags.description || tags["description:en"] || 
-        [tags.tourism, tags.historic, tags.amenity, tags.leisure]
+        [tags.tourism, tags.historic, tags.amenity, tags.leisure, tags.natural, tags.waterway, tags.sport]
           .filter(Boolean)
           .map(t => t!.replace(/_/g, " "))
           .join(" · ") || category;
