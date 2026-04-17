@@ -19,6 +19,8 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
   const visited = visitedPlaces.includes(place.id);
   const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
   const directionsUrl = getGoogleMapsDirectionsUrl(place.lat, place.lng);
+  const isPopular = (place as Place & { isPopular?: boolean }).isPopular === true;
+  const reviewCount = (place as Place & { reviewCount?: number }).reviewCount;
 
   return (
     <motion.article
@@ -43,6 +45,11 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
 
         <div className="absolute top-3 left-3 flex gap-1.5">
+          {isPopular && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-warning text-warning-foreground backdrop-blur-sm shadow-sm">
+              🔥 Popular
+            </span>
+          )}
           {place.isEcoFriendly && (
             <span className="eco-badge">
               <Leaf className="w-3 h-3" /> Eco
@@ -70,6 +77,11 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
           <div className="flex items-center gap-1 text-primary-foreground text-sm font-semibold shrink-0">
             <Star className="w-3.5 h-3.5 fill-warning text-warning" />
             {place.rating}
+            {reviewCount !== undefined && (
+              <span className="text-primary-foreground/80 text-xs font-medium ml-0.5">
+                ({reviewCount > 999 ? `${(reviewCount / 1000).toFixed(1)}k` : reviewCount})
+              </span>
+            )}
           </div>
         </div>
       </div>
