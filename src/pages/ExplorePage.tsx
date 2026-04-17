@@ -78,7 +78,7 @@ export default function ExplorePage() {
     const osmUnique = nearbyPlaces.filter(p => !localNames.has(p.name.toLowerCase()));
 
     return [...localWithDist, ...osmUnique];
-  }, [userLat, userLng, nearbyPlaces, hasPreciseLocation]);
+  }, [userLat, userLng, nearbyPlaces, hasCoords]);
 
   const filtered = useMemo(() => {
     let result = allPlaces;
