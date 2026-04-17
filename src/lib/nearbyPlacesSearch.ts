@@ -4,6 +4,9 @@ import { getDistance } from "@/data/places";
 export interface NearbyPlace extends Place {
   source: "local" | "osm";
   wikiUrl?: string;
+  isPopular?: boolean;
+  popularityScore?: number;
+  reviewCount?: number;
 }
 
 const OVERPASS_ENDPOINTS = [
