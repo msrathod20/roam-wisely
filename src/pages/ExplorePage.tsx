@@ -32,9 +32,11 @@ export default function ExplorePage() {
   const [externalLoading, setExternalLoading] = useState(false);
   const [lastExternalQuery, setLastExternalQuery] = useState("");
 
-  const hasPreciseLocation = typeof latitude === "number" && typeof longitude === "number";
-  const userLat = hasPreciseLocation ? latitude : null;
-  const userLng = hasPreciseLocation ? longitude : null;
+  // We always have coords now (real GPS or Bangalore fallback)
+  const hasCoords = typeof latitude === "number" && typeof longitude === "number";
+  const hasPreciseLocation = hasCoords && !isFallback;
+  const userLat = hasCoords ? latitude : null;
+  const userLng = hasCoords ? longitude : null;
 
   // Fetch nearby places from OSM when location is available
   useEffect(() => {
