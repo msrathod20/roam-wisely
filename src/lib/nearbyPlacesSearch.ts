@@ -16,32 +16,38 @@ const OVERPASS_ENDPOINTS = [
 ];
 
 function buildOverpassQueries(lat: number, lng: number, radiusKm: number): string[] {
+  // Famous-only queries: require notability tags (wikipedia/wikidata/heritage)
+  // OR strongly notable subtypes (museums, castles, forts, monuments, viewpoints, theme parks, zoos, waterfalls, beaches, peaks, nature reserves)
   const scenicRadius = Math.min(radiusKm, 100) * 1000;
-  const activityRadius = Math.min(radiusKm, 60) * 1000;
-  const foodRadius = Math.min(radiusKm, 35) * 1000;
+  const foodRadius = Math.min(radiusKm, 50) * 1000;
 
   return [
-    `[out:json][timeout:20];(
-      nwr["tourism"~"attraction|museum|viewpoint|theme_park|zoo"](around:${scenicRadius},${lat},${lng});
+    // Tourist attractions / museums / viewpoints / theme parks / zoos — only if notable
+    `[out:json][timeout:25];(
+      nwr["tourism"~"museum|theme_park|zoo|aquarium|gallery"]["name"](around:${scenicRadius},${lat},${lng});
+      nwr["tourism"~"attraction|viewpoint"]["name"]["wikidata"](around:${scenicRadius},${lat},${lng});
+      nwr["tourism"~"attraction|viewpoint"]["name"]["wikipedia"](around:${scenicRadius},${lat},${lng});
     );out center;`,
-    `[out:json][timeout:20];(
-      nwr["historic"~"castle|fort|monument|memorial|ruins|archaeological_site"](around:${scenicRadius},${lat},${lng});
-      nwr["amenity"="place_of_worship"]["name"](around:${scenicRadius},${lat},${lng});
+    // Heritage / historic — these are inherently famous categories
+    `[out:json][timeout:25];(
+      nwr["historic"~"castle|fort|monument|memorial|archaeological_site|palace|temple"]["name"](around:${scenicRadius},${lat},${lng});
+      nwr["heritage"]["name"](around:${scenicRadius},${lat},${lng});
+      nwr["amenity"="place_of_worship"]["name"]["wikidata"](around:${scenicRadius},${lat},${lng});
+      nwr["amenity"="place_of_worship"]["name"]["heritage"](around:${scenicRadius},${lat},${lng});
     );out center;`,
-    `[out:json][timeout:20];(
-      nwr["leisure"~"park|garden|nature_reserve"](around:${scenicRadius},${lat},${lng});
-      nwr["natural"~"water|peak|beach"](around:${scenicRadius},${lat},${lng});
-      nwr["waterway"="waterfall"](around:${scenicRadius},${lat},${lng});
+    // Iconic nature — waterfalls, peaks, beaches, big nature reserves, lakes
+    `[out:json][timeout:25];(
+      nwr["natural"~"peak|beach"]["name"](around:${scenicRadius},${lat},${lng});
+      nwr["waterway"="waterfall"]["name"](around:${scenicRadius},${lat},${lng});
+      nwr["leisure"="nature_reserve"]["name"](around:${scenicRadius},${lat},${lng});
+      nwr["natural"="water"]["name"]["wikidata"](around:${scenicRadius},${lat},${lng});
+      nwr["leisure"~"park|garden"]["name"]["wikidata"](around:${scenicRadius},${lat},${lng});
     );out center;`,
-    `[out:json][timeout:20];(
-      nwr["amenity"~"restaurant|cafe|fast_food|food_court"]["name"](around:${foodRadius},${lat},${lng});
-    );out center;`,
-    `[out:json][timeout:20];(
-      nwr["leisure"~"sports_centre|water_park"](around:${activityRadius},${lat},${lng});
-      nwr["sport"](around:${activityRadius},${lat},${lng});
-    );out center;`,
-    `[out:json][timeout:20];(
-      nwr["amenity"~"nightclub|bar|pub"]["name"](around:${foodRadius},${lat},${lng});
+    // Famous food — only restaurants with wikidata/wikipedia (notable) or chain/landmark eateries
+    `[out:json][timeout:25];(
+      nwr["amenity"~"restaurant|cafe"]["name"]["wikidata"](around:${foodRadius},${lat},${lng});
+      nwr["amenity"~"restaurant|cafe"]["name"]["wikipedia"](around:${foodRadius},${lat},${lng});
+      nwr["amenity"="restaurant"]["name"]["tourism"="yes"](around:${foodRadius},${lat},${lng});
     );out center;`,
   ];
 }
