@@ -19,6 +19,8 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
   const visited = visitedPlaces.includes(place.id);
   const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
   const directionsUrl = getGoogleMapsDirectionsUrl(place.lat, place.lng);
+  const isPopular = (place as Place & { isPopular?: boolean }).isPopular === true;
+  const reviewCount = (place as Place & { reviewCount?: number }).reviewCount;
 
   return (
     <motion.article
