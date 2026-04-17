@@ -196,12 +196,12 @@ export default function ExplorePage() {
               <MapPin className="w-3.5 h-3.5" />
               {hasPreciseLocation
                 ? `Showing places near your current location`
-                : "Enable location for accurate distances"}
+                : `Showing places near ${locationName} (default) — enable location for accurate distances`}
               <span className="text-primary font-semibold">• {filtered.length} places</span>
             </p>
             {!hasPreciseLocation && error && (
               <p className="text-xs text-muted-foreground mt-1">
-                Enable location access for accurate nearby distances and directions.
+                Tip: allow location access in your browser to see places around you instead.
               </p>
             )}
           </div>
