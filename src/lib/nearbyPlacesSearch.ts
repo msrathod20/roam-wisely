@@ -364,18 +364,14 @@ function generateThingsToTry(category: PlaceCategory, tags: Record<string, strin
   return base.slice(0, 3);
 }
 
-function estimateRating(tags: Record<string, string>): number {
-  // Use stars tag if available
+function estimateRating(tags: Record<string, string>, popularityScore: number = 0): number {
   if (tags.stars) {
     const s = parseFloat(tags.stars);
     if (s >= 1 && s <= 5) return s;
   }
-  // Wikipedia presence = likely notable
-  if (tags.wikipedia || tags.wikidata) return 4.2 + Math.random() * 0.5;
-  // Heritage sites
-  if (tags.historic || tags.heritage) return 4.0 + Math.random() * 0.6;
-  // Default
-  return 3.5 + Math.random() * 1.0;
+  // Map popularity 0..100 → 4.0..4.9
+  const base = 4.0 + Math.min(0.9, popularityScore / 110);
+  return Math.round(base * 10) / 10;
 }
 
 // Reverse geocode to get location name
