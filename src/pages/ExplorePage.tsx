@@ -259,18 +259,55 @@ export default function ExplorePage() {
             </p>
           </motion.div>
         ) : filtered.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((place, i) => (
-              <motion.div
-                key={place.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i * 0.03, 0.5) }}
-              >
-                <PlaceCard place={place} onSelect={setSelectedPlace} usesPreciseLocation={hasPreciseLocation} />
-              </motion.div>
-            ))}
-          </div>
+          <>
+            {/* Popular Destinations Section */}
+            {filtered.some(p => (p as any).isPopular) && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-display text-xl font-bold text-foreground">
+                    🌟 Popular Destinations Near You
+                  </h2>
+                  <span className="badge-primary text-xs">Top picks</span>
+                </div>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {filtered
+                    .filter(p => (p as any).isPopular)
+                    .slice(0, 6)
+                    .map((place, i) => (
+                      <motion.div
+                        key={`pop-${place.id}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: Math.min(i * 0.04, 0.4) }}
+                      >
+                        <PlaceCard place={place} onSelect={setSelectedPlace} usesPreciseLocation={hasPreciseLocation} />
+                      </motion.div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* All places */}
+            <div>
+              {filtered.some(p => (p as any).isPopular) && (
+                <h2 className="font-display text-lg font-bold text-foreground mb-4">
+                  All places nearby
+                </h2>
+              )}
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((place, i) => (
+                  <motion.div
+                    key={place.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.03, 0.5) }}
+                  >
+                    <PlaceCard place={place} onSelect={setSelectedPlace} usesPreciseLocation={hasPreciseLocation} />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </>
         ) : null}
 
         {/* External / Web Results */}
