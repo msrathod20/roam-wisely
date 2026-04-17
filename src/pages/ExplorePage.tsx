@@ -38,31 +38,32 @@ export default function ExplorePage() {
   const userLat = hasCoords ? latitude : null;
   const userLng = hasCoords ? longitude : null;
 
-  // Fetch nearby places from OSM when location is available
+  // Fetch nearby places from OSM whenever coords or radius change
   useEffect(() => {
     if (loading) return;
-    if (!hasPreciseLocation || userLat === null || userLng === null) {
-      setNearbyPlaces([]);
-      setNearbyLoading(false);
-      setLocationName("your area");
-      return;
-    }
+    if (!hasCoords || userLat === null || userLng === null) return;
 
     setNearbyLoading(true);
-    
+
     // Get location name
     reverseGeocode(userLat, userLng).then(name => setLocationName(name));
-    
+
     // Fetch nearby places
-    searchNearbyPlaces(userLat, userLng, maxDistance).then(places => {
-      setNearbyPlaces(places);
-      setNearbyLoading(false);
-    }).catch(() => setNearbyLoading(false));
-  }, [userLat, userLng, loading, maxDistance, hasPreciseLocation]);
+    searchNearbyPlaces(userLat, userLng, maxDistance)
+      .then(places => {
+        console.log(`[Explore] Got ${places.length} nearby places for`, userLat, userLng);
+        setNearbyPlaces(places);
+        setNearbyLoading(false);
+      })
+      .catch((err) => {
+        console.error("[Explore] Nearby search failed:", err);
+        setNearbyLoading(false);
+      });
+  }, [userLat, userLng, loading, maxDistance, hasCoords]);
 
   // Combine local DB places (with recalculated distance) + OSM nearby places
   const allPlaces = useMemo(() => {
-    if (!hasPreciseLocation || userLat === null || userLng === null) {
+    if (!hasCoords || userLat === null || userLng === null) {
       return [];
     }
 
