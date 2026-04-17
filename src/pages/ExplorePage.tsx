@@ -255,9 +255,7 @@ export default function ExplorePage() {
             </div>
             <p className="font-display font-bold text-foreground text-lg">No places found nearby</p>
             <p className="text-sm text-muted-foreground mt-1">
-                {hasPreciseLocation
-                  ? "Try increasing the radius or search for a specific place"
-                  : "Enable location access to discover places near your current location"}
+              Try increasing the radius, removing filters, or searching for a specific place.
             </p>
           </motion.div>
         ) : filtered.length > 0 ? (
