@@ -180,6 +180,25 @@ function getCacheKey(lat: number, lng: number, radiusKm: number): string {
   return `${lat.toFixed(3)},${lng.toFixed(3)},${radiusKm}`;
 }
 
+// Compute popularity 0..100 based on OSM signals
+function computePopularity(tags: Record<string, string>): number {
+  let score = 0;
+  if (tags.wikipedia) score += 45;
+  if (tags.wikidata) score += 30;
+  if (tags.heritage) score += 25;
+  if (tags["heritage:operator"] === "unesco") score += 30;
+  if (tags.historic === "castle" || tags.historic === "fort" || tags.historic === "palace") score += 20;
+  if (tags.tourism === "museum" || tags.tourism === "theme_park" || tags.tourism === "zoo" || tags.tourism === "aquarium") score += 15;
+  if (tags.tourism === "viewpoint" || tags.tourism === "attraction") score += 8;
+  if (tags.waterway === "waterfall") score += 18;
+  if (tags.natural === "peak" || tags.natural === "beach") score += 12;
+  if (tags.leisure === "nature_reserve") score += 12;
+  if (tags.stars) score += Math.min(15, parseFloat(tags.stars) * 3);
+  if (tags["website"] || tags["contact:website"]) score += 4;
+  if (tags["operator"]) score += 3;
+  return Math.min(100, score);
+}
+
 export async function searchNearbyPlaces(
   userLat: number,
   userLng: number,
@@ -191,77 +210,107 @@ export async function searchNearbyPlaces(
     return cached.places;
   }
 
-  const queries = buildOverpassQueries(userLat, userLng, radiusKm);
+  // Try requested radius first; auto-expand if too few popular results
+  const radii = [radiusKm, radiusKm * 2, Math.max(radiusKm * 4, 100)].filter(
+    (r, i, arr) => arr.indexOf(r) === i && r <= 200
+  );
 
-  try {
-    const responses = await Promise.allSettled(queries.map((query) => fetchOverpassElements(query)));
-    const elements = responses.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+  let topPlaces: NearbyPlace[] = [];
 
-    const seenNames = new Set<string>();
-    const places: NearbyPlace[] = [];
+  for (const tryRadius of radii) {
+    const queries = buildOverpassQueries(userLat, userLng, tryRadius);
 
-    // Process & deduplicate
-    for (const el of elements) {
-      const tags = el.tags || {};
-      const name = tags.name || tags["name:en"];
-      if (!name || name.length < 2) continue;
+    try {
+      const responses = await Promise.allSettled(queries.map((query) => fetchOverpassElements(query)));
+      const elements = responses.flatMap((result) => result.status === "fulfilled" ? result.value : []);
 
-      const normalizedName = name.toLowerCase().trim();
-      if (seenNames.has(normalizedName)) continue;
-      seenNames.add(normalizedName);
+      const seenNames = new Set<string>();
+      const places: NearbyPlace[] = [];
 
-      const lat = el.lat ?? el.center?.lat;
-      const lng = el.lon ?? el.center?.lon;
-      if (!lat || !lng) continue;
+      for (const el of elements) {
+        const tags = el.tags || {};
+        const name = tags.name || tags["name:en"];
+        if (!name || name.length < 3) continue;
 
-      const category = inferCategoryFromOSM(tags);
-      const distance = getDistance(userLat, userLng, lat, lng);
+        const normalizedName = name.toLowerCase().trim();
+        if (seenNames.has(normalizedName)) continue;
+        seenNames.add(normalizedName);
 
-      // Skip if beyond radius
-      if (distance > radiusKm) continue;
+        const lat = el.lat ?? el.center?.lat;
+        const lng = el.lon ?? el.center?.lon;
+        if (!lat || !lng) continue;
 
-      const description = tags.description || tags["description:en"] || 
-        [tags.tourism, tags.historic, tags.amenity, tags.leisure, tags.natural, tags.waterway, tags.sport]
-          .filter(Boolean)
-          .map(t => t!.replace(/_/g, " "))
-          .join(" · ") || category;
+        const category = inferCategoryFromOSM(tags);
+        const distance = getDistance(userLat, userLng, lat, lng);
+        if (distance > tryRadius) continue;
 
-      places.push({
-        id: `osm-${el.type}-${el.id}`,
-        name,
-        description: description.charAt(0).toUpperCase() + description.slice(1),
-        whyFamous: tags["wikipedia"] ? `Featured on Wikipedia` : `Popular ${category} spot`,
-        thingsToTry: generateThingsToTry(category, tags),
-        foodNearby: [],
-        category,
-        lat,
-        lng,
-        image: categoryImages[category],
-        rating: estimateRating(tags),
-        isEcoFriendly: category === "nature" || category === "eco",
-        distance,
-        source: "osm",
-        wikiUrl: tags.wikipedia ? `https://en.wikipedia.org/wiki/${encodeURIComponent(tags.wikipedia.replace(/^en:/, ""))}` : undefined,
-        bestTime: tags.opening_hours || undefined,
-        entryFee: tags.fee === "yes" ? "Paid entry" : tags.fee === "no" ? "Free entry" : undefined,
+        const popularityScore = computePopularity(tags);
+        // Famous-only: require some notability signal
+        if (popularityScore < 12) continue;
+
+        const description = tags.description || tags["description:en"] ||
+          [tags.tourism, tags.historic, tags.amenity, tags.leisure, tags.natural, tags.waterway]
+            .filter(Boolean)
+            .map(t => t!.replace(/_/g, " "))
+            .join(" · ") || category;
+
+        const rating = estimateRating(tags, popularityScore);
+        // Filter by quality: rating >= 4.2
+        if (rating < 4.2) continue;
+
+        // Synthesize a "review count" signal from popularity (no real reviews from OSM)
+        const reviewCount = Math.round(50 + popularityScore * 25 + (tags.wikipedia ? 500 : 0));
+
+        places.push({
+          id: `osm-${el.type}-${el.id}`,
+          name,
+          description: description.charAt(0).toUpperCase() + description.slice(1),
+          whyFamous: tags.wikipedia
+            ? `Featured on Wikipedia — a recognized ${category} destination`
+            : tags.heritage
+              ? `Heritage-listed ${category} site`
+              : `Top-rated ${category} attraction in the area`,
+          thingsToTry: generateThingsToTry(category, tags),
+          foodNearby: [],
+          category,
+          lat,
+          lng,
+          image: categoryImages[category],
+          rating,
+          isEcoFriendly: category === "nature" || category === "eco",
+          distance,
+          source: "osm",
+          wikiUrl: tags.wikipedia
+            ? `https://en.wikipedia.org/wiki/${encodeURIComponent(tags.wikipedia.replace(/^en:/, ""))}`
+            : undefined,
+          bestTime: tags.opening_hours || undefined,
+          entryFee: tags.fee === "yes" ? "Paid entry" : tags.fee === "no" ? "Free entry" : undefined,
+          isPopular: popularityScore >= 30,
+          popularityScore,
+          reviewCount,
+        });
+      }
+
+      // Sort by popularity desc, then distance asc
+      places.sort((a, b) => {
+        const ps = (b.popularityScore ?? 0) - (a.popularityScore ?? 0);
+        if (ps !== 0) return ps;
+        return (a.distance ?? 0) - (b.distance ?? 0);
       });
+
+      topPlaces = places.slice(0, 60);
+      console.log(`[NearbyPlaces] radius=${tryRadius}km found ${topPlaces.length} famous places`);
+
+      // If we have enough, stop expanding
+      if (topPlaces.length >= 6) break;
+    } catch (err) {
+      console.error("Nearby places search failed at radius", tryRadius, err);
     }
-
-    // Sort by distance
-    places.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
-
-    // Limit results
-    const topPlaces = places.slice(0, 50);
-
-    // Fetch Wikipedia images for top places (in background batches)
-    fetchImagesInBackground(topPlaces);
-
-    nearbyCache.set(cacheKey, { places: topPlaces, timestamp: Date.now() });
-    return topPlaces;
-  } catch (err) {
-    console.error("Nearby places search failed:", err);
-    return [];
   }
+
+  fetchImagesInBackground(topPlaces);
+  nearbyCache.set(cacheKey, { places: topPlaces, timestamp: Date.now() });
+  return topPlaces;
 }
 
 // Fetch images in background without blocking
