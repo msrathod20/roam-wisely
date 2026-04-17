@@ -13,7 +13,7 @@ import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 import { searchNearbyPlaces, reverseGeocode, NearbyPlace } from "@/lib/nearbyPlacesSearch";
 
 export default function ExplorePage() {
-  const { latitude, longitude, loading, error } = useGeolocation();
+  const { latitude, longitude, loading, error, isFallback } = useGeolocation();
   const { user } = useApp();
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<PlaceCategory[]>([]);
@@ -32,35 +32,38 @@ export default function ExplorePage() {
   const [externalLoading, setExternalLoading] = useState(false);
   const [lastExternalQuery, setLastExternalQuery] = useState("");
 
-  const hasPreciseLocation = typeof latitude === "number" && typeof longitude === "number";
-  const userLat = hasPreciseLocation ? latitude : null;
-  const userLng = hasPreciseLocation ? longitude : null;
+  // We always have coords now (real GPS or Bangalore fallback)
+  const hasCoords = typeof latitude === "number" && typeof longitude === "number";
+  const hasPreciseLocation = hasCoords && !isFallback;
+  const userLat = hasCoords ? latitude : null;
+  const userLng = hasCoords ? longitude : null;
 
-  // Fetch nearby places from OSM when location is available
+  // Fetch nearby places from OSM whenever coords or radius change
   useEffect(() => {
     if (loading) return;
-    if (!hasPreciseLocation || userLat === null || userLng === null) {
-      setNearbyPlaces([]);
-      setNearbyLoading(false);
-      setLocationName("your area");
-      return;
-    }
+    if (!hasCoords || userLat === null || userLng === null) return;
 
     setNearbyLoading(true);
-    
+
     // Get location name
     reverseGeocode(userLat, userLng).then(name => setLocationName(name));
-    
+
     // Fetch nearby places
-    searchNearbyPlaces(userLat, userLng, maxDistance).then(places => {
-      setNearbyPlaces(places);
-      setNearbyLoading(false);
-    }).catch(() => setNearbyLoading(false));
-  }, [userLat, userLng, loading, maxDistance, hasPreciseLocation]);
+    searchNearbyPlaces(userLat, userLng, maxDistance)
+      .then(places => {
+        console.log(`[Explore] Got ${places.length} nearby places for`, userLat, userLng);
+        setNearbyPlaces(places);
+        setNearbyLoading(false);
+      })
+      .catch((err) => {
+        console.error("[Explore] Nearby search failed:", err);
+        setNearbyLoading(false);
+      });
+  }, [userLat, userLng, loading, maxDistance, hasCoords]);
 
   // Combine local DB places (with recalculated distance) + OSM nearby places
   const allPlaces = useMemo(() => {
-    if (!hasPreciseLocation || userLat === null || userLng === null) {
+    if (!hasCoords || userLat === null || userLng === null) {
       return [];
     }
 
@@ -75,7 +78,7 @@ export default function ExplorePage() {
     const osmUnique = nearbyPlaces.filter(p => !localNames.has(p.name.toLowerCase()));
 
     return [...localWithDist, ...osmUnique];
-  }, [userLat, userLng, nearbyPlaces, hasPreciseLocation]);
+  }, [userLat, userLng, nearbyPlaces, hasCoords]);
 
   const filtered = useMemo(() => {
     let result = allPlaces;
@@ -149,10 +152,7 @@ export default function ExplorePage() {
   };
 
   const handleRefresh = () => {
-    if (!hasPreciseLocation || userLat === null || userLng === null) {
-      setNearbyPlaces([]);
-      return;
-    }
+    if (!hasCoords || userLat === null || userLng === null) return;
 
     setNearbyLoading(true);
     searchNearbyPlaces(userLat, userLng, maxDistance).then(places => {
@@ -196,12 +196,12 @@ export default function ExplorePage() {
               <MapPin className="w-3.5 h-3.5" />
               {hasPreciseLocation
                 ? `Showing places near your current location`
-                : "Enable location for accurate distances"}
+                : `Showing places near ${locationName} (default) — enable location for accurate distances`}
               <span className="text-primary font-semibold">• {filtered.length} places</span>
             </p>
             {!hasPreciseLocation && error && (
               <p className="text-xs text-muted-foreground mt-1">
-                Enable location access for accurate nearby distances and directions.
+                Tip: allow location access in your browser to see places around you instead.
               </p>
             )}
           </div>
@@ -255,9 +255,7 @@ export default function ExplorePage() {
             </div>
             <p className="font-display font-bold text-foreground text-lg">No places found nearby</p>
             <p className="text-sm text-muted-foreground mt-1">
-                {hasPreciseLocation
-                  ? "Try increasing the radius or search for a specific place"
-                  : "Enable location access to discover places near your current location"}
+              Try increasing the radius, removing filters, or searching for a specific place.
             </p>
           </motion.div>
         ) : filtered.length > 0 ? (
