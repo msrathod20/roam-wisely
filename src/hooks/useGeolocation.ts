@@ -5,6 +5,7 @@ interface LocationState {
   longitude: number | null;
   error: string | null;
   loading: boolean;
+  isFallback: boolean;
 }
 
 // Default: Bangalore center
@@ -17,15 +18,18 @@ export function useGeolocation() {
     longitude: null,
     error: null,
     loading: true,
+    isFallback: false,
   });
 
   useEffect(() => {
     if (!navigator.geolocation) {
+      console.warn("[Geolocation] Not supported, falling back to Bangalore");
       setLocation({
-        latitude: null,
-        longitude: null,
-        error: "Geolocation not supported",
+        latitude: DEFAULT_LAT,
+        longitude: DEFAULT_LNG,
+        error: "Geolocation not supported on this device",
         loading: false,
+        isFallback: true,
       });
       return;
     }
@@ -35,22 +39,24 @@ export function useGeolocation() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         if (cancelled) return;
-
+        console.log("[Geolocation] User location:", pos.coords.latitude, pos.coords.longitude);
         setLocation({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
           error: null,
           loading: false,
+          isFallback: false,
         });
       },
       (err) => {
         if (cancelled) return;
-
+        console.warn("[Geolocation] Error, using fallback (Bangalore):", err.message);
         setLocation({
-          latitude: null,
-          longitude: null,
+          latitude: DEFAULT_LAT,
+          longitude: DEFAULT_LNG,
           error: err.message,
           loading: false,
+          isFallback: true,
         });
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
