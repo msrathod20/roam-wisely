@@ -152,10 +152,7 @@ export default function ExplorePage() {
   };
 
   const handleRefresh = () => {
-    if (!hasPreciseLocation || userLat === null || userLng === null) {
-      setNearbyPlaces([]);
-      return;
-    }
+    if (!hasCoords || userLat === null || userLng === null) return;
 
     setNearbyLoading(true);
     searchNearbyPlaces(userLat, userLng, maxDistance).then(places => {
