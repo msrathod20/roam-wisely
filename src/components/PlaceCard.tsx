@@ -77,6 +77,11 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
           <div className="flex items-center gap-1 text-primary-foreground text-sm font-semibold shrink-0">
             <Star className="w-3.5 h-3.5 fill-warning text-warning" />
             {place.rating}
+            {reviewCount !== undefined && (
+              <span className="text-primary-foreground/80 text-xs font-medium ml-0.5">
+                ({reviewCount > 999 ? `${(reviewCount / 1000).toFixed(1)}k` : reviewCount})
+              </span>
+            )}
           </div>
         </div>
       </div>
