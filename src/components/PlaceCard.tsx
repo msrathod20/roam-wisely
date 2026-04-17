@@ -45,6 +45,11 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
 
         <div className="absolute top-3 left-3 flex gap-1.5">
+          {isPopular && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-warning text-warning-foreground backdrop-blur-sm shadow-sm">
+              🔥 Popular
+            </span>
+          )}
           {place.isEcoFriendly && (
             <span className="eco-badge">
               <Leaf className="w-3 h-3" /> Eco
