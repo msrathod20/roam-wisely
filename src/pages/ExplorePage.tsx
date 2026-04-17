@@ -13,7 +13,7 @@ import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 import { searchNearbyPlaces, reverseGeocode, NearbyPlace } from "@/lib/nearbyPlacesSearch";
 
 export default function ExplorePage() {
-  const { latitude, longitude, loading, error } = useGeolocation();
+  const { latitude, longitude, loading, error, isFallback } = useGeolocation();
   const { user } = useApp();
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<PlaceCategory[]>([]);
