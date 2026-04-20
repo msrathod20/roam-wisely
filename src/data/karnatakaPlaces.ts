@@ -43,7 +43,7 @@ interface Seed {
   rating: number;
   image: string;
   whyFamous: string;
-  thingsToTry: string[];
+  thingsToTry?: string[];
   bestTime?: string;
   entryFee?: string;
   isEcoFriendly?: boolean;
@@ -201,6 +201,17 @@ const SEEDS: Seed[] = [
   { name: "Third Wave Coffee Roasters", district: "Bangalore Urban", description: "Specialty coffee roastery chain born in Bangalore.", category: "cafe", lat: 12.9698, lng: 77.7500, rating: 4.5, image: IMG.cafe, whyFamous: "Single-origin Indian arabica brewed with global techniques." },
 ];
 
+const DEFAULT_THINGS: Record<PlaceCategory, string[]> = {
+  food: ["Try local specialties", "Food photography"],
+  cafe: ["Specialty coffee", "Enjoy ambiance"],
+  nature: ["Nature walk", "Photography", "Birdwatching"],
+  heritage: ["Guided tour", "Learn the history", "Photography"],
+  nightlife: ["Evening visit", "Try local drinks"],
+  activities: ["Adventure activities", "Group outing"],
+  attraction: ["Explore the area", "Take photos"],
+  eco: ["Nature walk", "Sustainable travel"],
+};
+
 // Convert seeds to Place objects with stable IDs
 export const KARNATAKA_PLACES: Place[] = SEEDS.map((s, idx) => ({
   id: `kn-${idx + 1}`,
@@ -208,7 +219,7 @@ export const KARNATAKA_PLACES: Place[] = SEEDS.map((s, idx) => ({
   description: s.description,
   whyFamous: s.whyFamous,
   history: s.history,
-  thingsToTry: s.thingsToTry,
+  thingsToTry: s.thingsToTry ?? DEFAULT_THINGS[s.category],
   foodNearby: s.foodNearby,
   bestTime: s.bestTime,
   entryFee: s.entryFee,
