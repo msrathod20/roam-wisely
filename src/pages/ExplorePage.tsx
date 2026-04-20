@@ -104,7 +104,17 @@ export default function ExplorePage() {
       result = result.filter(p => selectedCategories.includes(p.category));
     }
     // Always filter by distance (from user's actual location)
-    result = result.filter(p => (p.distance ?? 0) <= maxDistance);
+    let inRadius = result.filter(p => (p.distance ?? 0) <= maxDistance);
+
+    // Auto-expand: if too few local famous places nearby, gradually widen up to 300km
+    if (!hasSearch && inRadius.length < 6) {
+      const widerRadii = [maxDistance * 2, 100, 200, 300];
+      for (const r of widerRadii) {
+        inRadius = result.filter(p => (p.distance ?? 0) <= r);
+        if (inRadius.length >= 6) break;
+      }
+    }
+    result = inRadius;
     if (ecoOnly) result = result.filter(p => p.isEcoFriendly);
 
     if (user?.interests) {
