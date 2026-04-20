@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/places";
+import { KARNATAKA_PLACES } from "@/data/karnatakaPlaces";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import PlaceCard from "@/components/PlaceCard";
 import PlaceDetail from "@/components/PlaceDetail";
@@ -61,21 +62,28 @@ export default function ExplorePage() {
       });
   }, [userLat, userLng, loading, maxDistance, hasCoords]);
 
-  // Combine local DB places (with recalculated distance) + OSM nearby places
+  // Combine local DB places (Bangalore + Karnataka curated) + OSM nearby
   const allPlaces = useMemo(() => {
     if (!hasCoords || userLat === null || userLng === null) {
       return [];
     }
 
-    const localWithDist = BANGALORE_PLACES.map((p) => ({
+    // Merge Bangalore detailed DB + Karnataka-wide curated DB, dedupe by name
+    const localDbMap = new Map<string, Place>();
+    for (const p of [...BANGALORE_PLACES, ...KARNATAKA_PLACES]) {
+      const key = p.name.toLowerCase().trim();
+      if (!localDbMap.has(key)) localDbMap.set(key, p);
+    }
+
+    const localWithDist = Array.from(localDbMap.values()).map((p) => ({
       ...p,
       distance: getDistance(userLat, userLng, p.lat, p.lng),
       source: "local" as const,
     }));
 
-    // Merge: prefer local DB entries, add OSM for places not in local DB
-    const localNames = new Set(localWithDist.map(p => p.name.toLowerCase()));
-    const osmUnique = nearbyPlaces.filter(p => !localNames.has(p.name.toLowerCase()));
+    // Add OSM places that aren't already in local DB
+    const localNames = new Set(localWithDist.map((p) => p.name.toLowerCase()));
+    const osmUnique = nearbyPlaces.filter((p) => !localNames.has(p.name.toLowerCase()));
 
     return [...localWithDist, ...osmUnique];
   }, [userLat, userLng, nearbyPlaces, hasCoords]);
@@ -96,7 +104,17 @@ export default function ExplorePage() {
       result = result.filter(p => selectedCategories.includes(p.category));
     }
     // Always filter by distance (from user's actual location)
-    result = result.filter(p => (p.distance ?? 0) <= maxDistance);
+    let inRadius = result.filter(p => (p.distance ?? 0) <= maxDistance);
+
+    // Auto-expand: if too few local famous places nearby, gradually widen up to 300km
+    if (!hasSearch && inRadius.length < 6) {
+      const widerRadii = [maxDistance * 2, 100, 200, 300];
+      for (const r of widerRadii) {
+        inRadius = result.filter(p => (p.distance ?? 0) <= r);
+        if (inRadius.length >= 6) break;
+      }
+    }
+    result = inRadius;
     if (ecoOnly) result = result.filter(p => p.isEcoFriendly);
 
     if (user?.interests) {
