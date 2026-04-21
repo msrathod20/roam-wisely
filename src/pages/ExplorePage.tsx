@@ -216,6 +216,54 @@ export default function ExplorePage() {
   const showExternalSection = search.trim().length >= 3 && (externalResults.length > 0 || externalLoading);
   const isLoadingPlaces = nearbyLoading && filtered.length === 0;
 
+  const handlePickCity = (city: KarnatakaCity) => {
+    setManualLocation(city.lat, city.lng, city.name);
+    setLocationName(city.name);
+    setNearbyPlaces([]); // clear stale OSM results from previous location
+  };
+
+  // Always-visible fallback list: top curated Karnataka places (works without coords too)
+  const fallbackPlaces = useMemo(() => {
+    const seed = [...KARNATAKA_PLACES, ...BANGALORE_PLACES]
+      .filter((p) => p.image && p.name && p.rating >= 4.4)
+      .slice(0, 6);
+    return seed;
+  }, []);
+
+  // No coords yet → show city picker + popular Karnataka places
+  if (!hasCoords) {
+    return (
+      <div className="flex-1 container py-8 space-y-8">
+        <LocationPrompt
+          error={error}
+          loading={loading}
+          onRetry={retry}
+          onPickCity={handlePickCity}
+        />
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground mb-4 text-center">
+            ✨ Popular in Karnataka
+          </h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {fallbackPlaces.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onSelect={setSelectedPlace}
+                usesPreciseLocation={false}
+              />
+            ))}
+          </div>
+        </div>
+        <PlaceDetail
+          place={selectedPlace}
+          onClose={() => setSelectedPlace(null)}
+          usesPreciseLocation={false}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="container py-6 space-y-5">
@@ -224,22 +272,22 @@ export default function ExplorePage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between"
         >
-          <div>
-            <h1 className="font-display text-3xl font-extrabold text-foreground">
+          <div className="space-y-2 min-w-0">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
               Explore {locationName}
             </h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-              <MapPin className="w-3.5 h-3.5" />
-              {hasPreciseLocation
-                ? `Showing places near your current location`
-                : `Showing places near ${locationName} (default) — enable location for accurate distances`}
-              <span className="text-primary font-semibold">• {filtered.length} places</span>
+            <LocationBar
+              cityLabel={locationName}
+              source={source}
+              loading={loading}
+              onPickCity={handlePickCity}
+              onUseMyLocation={retry}
+              hasError={!!error && source !== "gps"}
+            />
+            <p className="text-xs text-muted-foreground">
+              <span className="text-primary font-semibold">{filtered.length} places</span>{" "}
+              {hasPreciseLocation ? "from your current location" : `near ${locationName}`}
             </p>
-            {!hasPreciseLocation && error && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Tip: allow location access in your browser to see places around you instead.
-              </p>
-            )}
           </div>
           <div className="flex items-center gap-2">
             {nearbyLoading && (
