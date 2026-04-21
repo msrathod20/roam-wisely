@@ -1,16 +1,26 @@
-export function formatDistance(distanceKm: number): string {
-  if (!Number.isFinite(distanceKm)) return "";
+export function formatDistance(distanceKm: number | undefined | null): string {
+  if (distanceKm === undefined || distanceKm === null || !Number.isFinite(distanceKm)) return "";
   if (distanceKm < 1) return `${Math.round(distanceKm * 1000)}m`;
   if (distanceKm < 10) return `${distanceKm.toFixed(1)}km`;
   return `${Math.round(distanceKm)}km`;
 }
 
-export function formatDistanceSummary(distanceKm: number, usesPreciseLocation: boolean): string {
+// Compact label shown on cards — always user-centric
+export function formatDistanceSummary(distanceKm: number | undefined | null, usesPreciseLocation: boolean): string {
+  if (distanceKm === undefined || distanceKm === null || !Number.isFinite(distanceKm)) {
+    return "Distance unavailable";
+  }
   const formattedDistance = formatDistance(distanceKm);
-  return usesPreciseLocation ? formattedDistance : `${formattedDistance} from center`;
+  return usesPreciseLocation ? `${formattedDistance} away` : `~${formattedDistance} away`;
 }
 
-export function formatDistanceDetail(distanceKm: number, usesPreciseLocation: boolean): string {
+// Detailed label shown on the place detail panel
+export function formatDistanceDetail(distanceKm: number | undefined | null, usesPreciseLocation: boolean): string {
+  if (distanceKm === undefined || distanceKm === null || !Number.isFinite(distanceKm)) {
+    return "Distance unavailable";
+  }
   const formattedDistance = formatDistance(distanceKm);
-  return usesPreciseLocation ? `${formattedDistance} away` : `${formattedDistance} from Bangalore center`;
+  return usesPreciseLocation
+    ? `${formattedDistance} from you`
+    : `~${formattedDistance} from you (approx. location)`;
 }
