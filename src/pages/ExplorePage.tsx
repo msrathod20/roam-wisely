@@ -322,25 +322,33 @@ export default function ExplorePage() {
       <div className="flex-1 container pb-8">
         {/* Loading state */}
         {isLoadingPlaces ? (
-          <div className="text-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-            <p className="font-display font-bold text-foreground">Discovering places near you...</p>
-            <p className="text-sm text-muted-foreground mt-1">Searching OpenStreetMap for nearby attractions</p>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <PlaceCardSkeleton key={i} />
+            ))}
           </div>
         ) : filtered.length === 0 && !showExternalSection ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12"
-          >
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
-              <span className="text-4xl">🗺️</span>
+          <div>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-3">
+                <span className="text-3xl">🗺️</span>
+              </div>
+              <p className="font-display font-bold text-foreground">No matches in your filters</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Showing popular Karnataka destinations instead.
+              </p>
             </div>
-            <p className="font-display font-bold text-foreground text-lg">No places found nearby</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Try increasing the radius, removing filters, or searching for a specific place.
-            </p>
-          </motion.div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {fallbackPlaces.map((place) => (
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  onSelect={setSelectedPlace}
+                  usesPreciseLocation={false}
+                />
+              ))}
+            </div>
+          </div>
         ) : filtered.length > 0 ? (
           <>
             {/* Popular Destinations Section */}
