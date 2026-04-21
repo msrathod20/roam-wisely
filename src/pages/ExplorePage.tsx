@@ -40,7 +40,7 @@ export default function ExplorePage() {
   // Nearby OSM places state
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [locationName, setLocationName] = useState("your area");
+  const [locationName, setLocationName] = useState<string>("your area");
 
   // External search state
   const [externalResults, setExternalResults] = useState<ExternalPlace[]>([]);
@@ -60,8 +60,12 @@ export default function ExplorePage() {
 
     setNearbyLoading(true);
 
-    // Get location name
-    reverseGeocode(userLat, userLng).then(name => setLocationName(name));
+    // Use manual label if user picked a city; else reverse-geocode
+    if (source === "manual" && manualLabel) {
+      setLocationName(manualLabel);
+    } else {
+      reverseGeocode(userLat, userLng).then((name) => setLocationName(name));
+    }
 
     // Fetch nearby places
     searchNearbyPlaces(userLat, userLng, maxDistance)
@@ -74,7 +78,7 @@ export default function ExplorePage() {
         console.error("[Explore] Nearby search failed:", err);
         setNearbyLoading(false);
       });
-  }, [userLat, userLng, loading, maxDistance, hasCoords]);
+  }, [userLat, userLng, loading, maxDistance, hasCoords, source, manualLabel]);
 
   // Combine local DB places (Bangalore + Karnataka curated) + OSM nearby
   const allPlaces = useMemo(() => {
