@@ -206,15 +206,15 @@ export default function ExplorePage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-          <div>
-            <p className="font-display font-bold text-foreground">Detecting Location</p>
-            <p className="text-sm text-muted-foreground">Finding the best spots near you...</p>
-          </div>
+      <div className="flex-1 container py-6 space-y-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          Detecting your location…
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <PlaceCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
