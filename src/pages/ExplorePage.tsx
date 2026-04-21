@@ -197,6 +197,13 @@ export default function ExplorePage() {
     }).catch(() => setNearbyLoading(false));
   };
 
+  // Always-visible fallback list of top curated Karnataka places (used when no coords)
+  const fallbackPlaces = useMemo(() => {
+    return [...KARNATAKA_PLACES, ...BANGALORE_PLACES]
+      .filter((p) => p.image && p.name && p.rating >= 4.4)
+      .slice(0, 6);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[60vh]">
@@ -221,14 +228,6 @@ export default function ExplorePage() {
     setLocationName(city.name);
     setNearbyPlaces([]); // clear stale OSM results from previous location
   };
-
-  // Always-visible fallback list: top curated Karnataka places (works without coords too)
-  const fallbackPlaces = useMemo(() => {
-    const seed = [...KARNATAKA_PLACES, ...BANGALORE_PLACES]
-      .filter((p) => p.image && p.name && p.rating >= 4.4)
-      .slice(0, 6);
-    return seed;
-  }, []);
 
   // No coords yet → show city picker + popular Karnataka places
   if (!hasCoords) {
