@@ -3,18 +3,32 @@ import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/plac
 import { KARNATAKA_PLACES } from "@/data/karnatakaPlaces";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import PlaceCard from "@/components/PlaceCard";
+import PlaceCardSkeleton from "@/components/PlaceCardSkeleton";
 import PlaceDetail from "@/components/PlaceDetail";
 import ExternalPlaceCard from "@/components/ExternalPlaceCard";
 import ExternalPlaceDetail from "@/components/ExternalPlaceDetail";
 import FilterBar from "@/components/FilterBar";
+import LocationBar from "@/components/LocationBar";
+import LocationPrompt from "@/components/LocationPrompt";
+import { KarnatakaCity } from "@/data/karnatakaCities";
 import { useApp } from "@/context/AppContext";
-import { Loader2, MapPin, Sparkles, Globe, RefreshCw } from "lucide-react";
+import { Loader2, Sparkles, Globe, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 import { searchNearbyPlaces, reverseGeocode, NearbyPlace } from "@/lib/nearbyPlacesSearch";
 
 export default function ExplorePage() {
-  const { latitude, longitude, loading, error, isFallback } = useGeolocation();
+  const {
+    latitude,
+    longitude,
+    loading,
+    error,
+    needsLocation,
+    source,
+    manualLabel,
+    setManualLocation,
+    retry,
+  } = useGeolocation();
   const { user } = useApp();
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<PlaceCategory[]>([]);
@@ -33,9 +47,9 @@ export default function ExplorePage() {
   const [externalLoading, setExternalLoading] = useState(false);
   const [lastExternalQuery, setLastExternalQuery] = useState("");
 
-  // We always have coords now (real GPS or Bangalore fallback)
+  // Coords are only set when we trust them (real GPS or user-picked city)
   const hasCoords = typeof latitude === "number" && typeof longitude === "number";
-  const hasPreciseLocation = hasCoords && !isFallback;
+  const hasPreciseLocation = hasCoords && source === "gps";
   const userLat = hasCoords ? latitude : null;
   const userLng = hasCoords ? longitude : null;
 
