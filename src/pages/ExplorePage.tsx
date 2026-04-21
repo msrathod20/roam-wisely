@@ -3,18 +3,32 @@ import { BANGALORE_PLACES, getDistance, PlaceCategory, Place } from "@/data/plac
 import { KARNATAKA_PLACES } from "@/data/karnatakaPlaces";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import PlaceCard from "@/components/PlaceCard";
+import PlaceCardSkeleton from "@/components/PlaceCardSkeleton";
 import PlaceDetail from "@/components/PlaceDetail";
 import ExternalPlaceCard from "@/components/ExternalPlaceCard";
 import ExternalPlaceDetail from "@/components/ExternalPlaceDetail";
 import FilterBar from "@/components/FilterBar";
+import LocationBar from "@/components/LocationBar";
+import LocationPrompt from "@/components/LocationPrompt";
+import { KarnatakaCity } from "@/data/karnatakaCities";
 import { useApp } from "@/context/AppContext";
-import { Loader2, MapPin, Sparkles, Globe, RefreshCw } from "lucide-react";
+import { Loader2, Sparkles, Globe, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 import { searchNearbyPlaces, reverseGeocode, NearbyPlace } from "@/lib/nearbyPlacesSearch";
 
 export default function ExplorePage() {
-  const { latitude, longitude, loading, error, isFallback } = useGeolocation();
+  const {
+    latitude,
+    longitude,
+    loading,
+    error,
+    needsLocation,
+    source,
+    manualLabel,
+    setManualLocation,
+    retry,
+  } = useGeolocation();
   const { user } = useApp();
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<PlaceCategory[]>([]);
@@ -26,16 +40,16 @@ export default function ExplorePage() {
   // Nearby OSM places state
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [locationName, setLocationName] = useState("your area");
+  const [locationName, setLocationName] = useState<string>("your area");
 
   // External search state
   const [externalResults, setExternalResults] = useState<ExternalPlace[]>([]);
   const [externalLoading, setExternalLoading] = useState(false);
   const [lastExternalQuery, setLastExternalQuery] = useState("");
 
-  // We always have coords now (real GPS or Bangalore fallback)
+  // Coords are only set when we trust them (real GPS or user-picked city)
   const hasCoords = typeof latitude === "number" && typeof longitude === "number";
-  const hasPreciseLocation = hasCoords && !isFallback;
+  const hasPreciseLocation = hasCoords && source === "gps";
   const userLat = hasCoords ? latitude : null;
   const userLng = hasCoords ? longitude : null;
 
@@ -46,8 +60,12 @@ export default function ExplorePage() {
 
     setNearbyLoading(true);
 
-    // Get location name
-    reverseGeocode(userLat, userLng).then(name => setLocationName(name));
+    // Use manual label if user picked a city; else reverse-geocode
+    if (source === "manual" && manualLabel) {
+      setLocationName(manualLabel);
+    } else {
+      reverseGeocode(userLat, userLng).then((name) => setLocationName(name));
+    }
 
     // Fetch nearby places
     searchNearbyPlaces(userLat, userLng, maxDistance)
@@ -60,7 +78,7 @@ export default function ExplorePage() {
         console.error("[Explore] Nearby search failed:", err);
         setNearbyLoading(false);
       });
-  }, [userLat, userLng, loading, maxDistance, hasCoords]);
+  }, [userLat, userLng, loading, maxDistance, hasCoords, source, manualLabel]);
 
   // Combine local DB places (Bangalore + Karnataka curated) + OSM nearby
   const allPlaces = useMemo(() => {
@@ -179,17 +197,24 @@ export default function ExplorePage() {
     }).catch(() => setNearbyLoading(false));
   };
 
+  // Always-visible fallback list of top curated Karnataka places (used when no coords)
+  const fallbackPlaces = useMemo(() => {
+    return [...KARNATAKA_PLACES, ...BANGALORE_PLACES]
+      .filter((p) => p.image && p.name && p.rating >= 4.4)
+      .slice(0, 6);
+  }, []);
+
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-          <div>
-            <p className="font-display font-bold text-foreground">Detecting Location</p>
-            <p className="text-sm text-muted-foreground">Finding the best spots near you...</p>
-          </div>
+      <div className="flex-1 container py-6 space-y-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          Detecting your location…
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <PlaceCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
@@ -197,6 +222,46 @@ export default function ExplorePage() {
 
   const showExternalSection = search.trim().length >= 3 && (externalResults.length > 0 || externalLoading);
   const isLoadingPlaces = nearbyLoading && filtered.length === 0;
+
+  const handlePickCity = (city: KarnatakaCity) => {
+    setManualLocation(city.lat, city.lng, city.name);
+    setLocationName(city.name);
+    setNearbyPlaces([]); // clear stale OSM results from previous location
+  };
+
+  // No coords yet → show city picker + popular Karnataka places
+  if (!hasCoords) {
+    return (
+      <div className="flex-1 container py-8 space-y-8">
+        <LocationPrompt
+          error={error}
+          loading={loading}
+          onRetry={retry}
+          onPickCity={handlePickCity}
+        />
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground mb-4 text-center">
+            ✨ Popular in Karnataka
+          </h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {fallbackPlaces.map((place) => (
+              <PlaceCard
+                key={place.id}
+                place={place}
+                onSelect={setSelectedPlace}
+                usesPreciseLocation={false}
+              />
+            ))}
+          </div>
+        </div>
+        <PlaceDetail
+          place={selectedPlace}
+          onClose={() => setSelectedPlace(null)}
+          usesPreciseLocation={false}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col">
@@ -206,22 +271,22 @@ export default function ExplorePage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between"
         >
-          <div>
-            <h1 className="font-display text-3xl font-extrabold text-foreground">
+          <div className="space-y-2 min-w-0">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground">
               Explore {locationName}
             </h1>
-            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-              <MapPin className="w-3.5 h-3.5" />
-              {hasPreciseLocation
-                ? `Showing places near your current location`
-                : `Showing places near ${locationName} (default) — enable location for accurate distances`}
-              <span className="text-primary font-semibold">• {filtered.length} places</span>
+            <LocationBar
+              cityLabel={locationName}
+              source={source}
+              loading={loading}
+              onPickCity={handlePickCity}
+              onUseMyLocation={retry}
+              hasError={!!error && source !== "gps"}
+            />
+            <p className="text-xs text-muted-foreground">
+              <span className="text-primary font-semibold">{filtered.length} places</span>{" "}
+              {hasPreciseLocation ? "from your current location" : `near ${locationName}`}
             </p>
-            {!hasPreciseLocation && error && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Tip: allow location access in your browser to see places around you instead.
-              </p>
-            )}
           </div>
           <div className="flex items-center gap-2">
             {nearbyLoading && (
@@ -257,25 +322,33 @@ export default function ExplorePage() {
       <div className="flex-1 container pb-8">
         {/* Loading state */}
         {isLoadingPlaces ? (
-          <div className="text-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-            <p className="font-display font-bold text-foreground">Discovering places near you...</p>
-            <p className="text-sm text-muted-foreground mt-1">Searching OpenStreetMap for nearby attractions</p>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <PlaceCardSkeleton key={i} />
+            ))}
           </div>
         ) : filtered.length === 0 && !showExternalSection ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-12"
-          >
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-4">
-              <span className="text-4xl">🗺️</span>
+          <div>
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-muted flex items-center justify-center mb-3">
+                <span className="text-3xl">🗺️</span>
+              </div>
+              <p className="font-display font-bold text-foreground">No matches in your filters</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Showing popular Karnataka destinations instead.
+              </p>
             </div>
-            <p className="font-display font-bold text-foreground text-lg">No places found nearby</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Try increasing the radius, removing filters, or searching for a specific place.
-            </p>
-          </motion.div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {fallbackPlaces.map((place) => (
+                <PlaceCard
+                  key={place.id}
+                  place={place}
+                  onSelect={setSelectedPlace}
+                  usesPreciseLocation={false}
+                />
+              ))}
+            </div>
+          </div>
         ) : filtered.length > 0 ? (
           <>
             {/* Popular Destinations Section */}
