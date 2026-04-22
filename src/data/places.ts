@@ -1,4 +1,5 @@
 import { Leaf, Utensils, Landmark, TreePine, Music, Bike, Camera, Coffee } from "lucide-react";
+import { enrichCuratedPlaceDescription } from "@/lib/placeDescription";
 
 export type PlaceCategory = "food" | "heritage" | "nature" | "nightlife" | "eco" | "activities" | "attraction" | "cafe";
 
@@ -37,7 +38,7 @@ export const categoryConfig: Record<PlaceCategory, { label: string; icon: typeof
   cafe: { label: "Café", icon: Coffee, color: "hsl(var(--warning))" },
 };
 
-export const BANGALORE_PLACES: Place[] = [
+const RAW_BANGALORE_PLACES: Place[] = [
   {
     id: "1",
     name: "Lalbagh Botanical Garden",
@@ -1163,6 +1164,8 @@ export const BANGALORE_PLACES: Place[] = [
     isEcoFriendly: true,
   },
 ];
+
+export const BANGALORE_PLACES: Place[] = RAW_BANGALORE_PLACES.map((place) => enrichCuratedPlaceDescription(place));
 
 
 export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

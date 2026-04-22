@@ -1,4 +1,5 @@
 import { Place, PlaceCategory } from "./places";
+import { enrichCuratedPlaceDescription } from "@/lib/placeDescription";
 
 /**
  * Curated dataset of famous places across ALL 31 districts of Karnataka.
@@ -294,7 +295,7 @@ export const KARNATAKA_PLACES: Place[] = SEEDS.map((s, idx) => ({
   image: s.image,
   rating: s.rating,
   isEcoFriendly: s.isEcoFriendly ?? (s.category === "nature"),
-}));
+})).map(enrichCuratedPlaceDescription);
 
 // Tag district on each (for future filtering / debug)
 export const KARNATAKA_PLACES_WITH_DISTRICT = SEEDS.map((s, idx) => ({

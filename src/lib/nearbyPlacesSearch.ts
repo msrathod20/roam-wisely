@@ -1,5 +1,6 @@
 import { Place, PlaceCategory } from "@/data/places";
 import { getDistance } from "@/data/places";
+import { buildOsmDescription } from "@/lib/placeDescription";
 
 export interface NearbyPlace extends Place {
   source: "local" | "osm";
@@ -248,11 +249,12 @@ export async function searchNearbyPlaces(
         // Famous-only: require some notability signal
         if (popularityScore < 12) continue;
 
-        const description = tags.description || tags["description:en"] ||
+        const rawDescription = tags.description || tags["description:en"] ||
           [tags.tourism, tags.historic, tags.amenity, tags.leisure, tags.natural, tags.waterway]
             .filter(Boolean)
             .map(t => t!.replace(/_/g, " "))
-            .join(" · ") || category;
+            .join(" · ") || undefined;
+        const description = buildOsmDescription(name, tags, category, rawDescription);
 
         const rating = estimateRating(tags, popularityScore);
         // Filter by quality: rating >= 4.2
@@ -264,7 +266,7 @@ export async function searchNearbyPlaces(
         places.push({
           id: `osm-${el.type}-${el.id}`,
           name,
-          description: description.charAt(0).toUpperCase() + description.slice(1),
+          description,
           whyFamous: tags.wikipedia
             ? `Featured on Wikipedia — a recognized ${category} destination`
             : tags.heritage
