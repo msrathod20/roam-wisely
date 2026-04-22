@@ -16,7 +16,7 @@ type CuratedPlaceLike = {
   culturalInsight?: string;
   thingsToTry?: string[];
   bestTime?: string;
-  category: DescriptionCategory;
+  category: string;
 };
 
 function normalizeSentence(text?: string | null): string {
@@ -66,7 +66,7 @@ function normalizeExperience(items?: string[]): string[] {
     .slice(0, 3);
 }
 
-function genericExperience(category: DescriptionCategory): string {
+function genericExperience(category: string): string {
   switch (category) {
     case "heritage":
       return "You can explore the architecture, walk through the site, and get a clear sense of its history.";
