@@ -1,4 +1,5 @@
 import { Leaf, Utensils, Landmark, TreePine, Music, Bike, Camera, Coffee } from "lucide-react";
+import { enrichCuratedPlaceDescription } from "@/lib/placeDescription";
 
 export type PlaceCategory = "food" | "heritage" | "nature" | "nightlife" | "eco" | "activities" | "attraction" | "cafe";
 
@@ -1162,7 +1163,7 @@ export const BANGALORE_PLACES: Place[] = [
     rating: 3.5,
     isEcoFriendly: true,
   },
-];
+].map(enrichCuratedPlaceDescription);
 
 
 export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
