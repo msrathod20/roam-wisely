@@ -1,3 +1,5 @@
+import type { PlaceCategory } from "@/data/places";
+
 export type DescriptionCategory =
   | "food"
   | "heritage"
@@ -16,7 +18,7 @@ type CuratedPlaceLike = {
   culturalInsight?: string;
   thingsToTry?: string[];
   bestTime?: string;
-  category: string;
+  category: PlaceCategory;
 };
 
 function normalizeSentence(text?: string | null): string {
@@ -66,7 +68,7 @@ function normalizeExperience(items?: string[]): string[] {
     .slice(0, 3);
 }
 
-function genericExperience(category: string): string {
+function genericExperience(category: PlaceCategory): string {
   switch (category) {
     case "heritage":
       return "You can explore the architecture, walk through the site, and get a clear sense of its history.";

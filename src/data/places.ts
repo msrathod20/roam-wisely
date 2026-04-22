@@ -1163,7 +1163,7 @@ export const BANGALORE_PLACES: Place[] = [
     rating: 3.5,
     isEcoFriendly: true,
   },
-].map(enrichCuratedPlaceDescription);
+].map((place): Place => enrichCuratedPlaceDescription(place));
 
 
 export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
