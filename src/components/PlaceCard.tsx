@@ -1,5 +1,6 @@
 import { Place, categoryConfig } from "@/data/places";
-import { Heart, MapPin, Navigation, Leaf, Star, Clock } from "lucide-react";
+import { Heart, MapPin, Navigation, Leaf, Star, Clock, User } from "lucide-react";
+import { GEM_CATEGORY_META, GemCategory } from "@/lib/userGems";
 import { useApp } from "@/context/AppContext";
 import { motion } from "framer-motion";
 import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
@@ -21,6 +22,10 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
   const directionsUrl = getGoogleMapsDirectionsUrl(place.lat, place.lng);
   const isPopular = (place as Place & { isPopular?: boolean }).isPopular === true;
   const reviewCount = (place as Place & { reviewCount?: number }).reviewCount;
+  const isUserGem = (place as Place & { isUserGem?: boolean }).isUserGem === true;
+  const gemCategory = (place as Place & { gemCategory?: GemCategory }).gemCategory;
+  const submitterName = (place as Place & { submitterName?: string | null }).submitterName;
+  const gemMeta = gemCategory ? GEM_CATEGORY_META[gemCategory] : null;
 
   return (
     <motion.article
@@ -45,6 +50,11 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
 
         <div className="absolute top-3 left-3 flex gap-1.5">
+          {isUserGem && gemMeta && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-accent text-accent-foreground backdrop-blur-sm shadow-sm border border-primary/30">
+              {gemMeta.emoji} {gemMeta.label}
+            </span>
+          )}
           {isPopular && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-warning text-warning-foreground backdrop-blur-sm shadow-sm">
               🔥 Popular
@@ -88,6 +98,13 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
 
       <div className="p-4 space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">{place.description}</p>
+
+        {isUserGem && (
+          <div className="flex items-center gap-1.5 text-xs text-primary font-semibold">
+            <User className="w-3 h-3" />
+            Added by {submitterName ? submitterName : "a local explorer"} 👤
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
           {place.distance !== undefined && (
