@@ -12,10 +12,12 @@ import LocationBar from "@/components/LocationBar";
 import LocationPrompt from "@/components/LocationPrompt";
 import { KarnatakaCity } from "@/data/karnatakaCities";
 import { useApp } from "@/context/AppContext";
-import { Loader2, Sparkles, Globe, RefreshCw } from "lucide-react";
+import { Loader2, Sparkles, Globe, RefreshCw, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 import { searchNearbyPlaces, reverseGeocode, NearbyPlace } from "@/lib/nearbyPlacesSearch";
+import AddGemDialog from "@/components/AddGemDialog";
+import { fetchApprovedGems, gemToPlace, UserGemRow } from "@/lib/userGems";
 
 export default function ExplorePage() {
   const {
@@ -42,6 +44,10 @@ export default function ExplorePage() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [locationName, setLocationName] = useState<string>("your area");
 
+  // User-submitted gems
+  const [gems, setGems] = useState<UserGemRow[]>([]);
+  const [gemDialogOpen, setGemDialogOpen] = useState(false);
+
   // External search state
   const [externalResults, setExternalResults] = useState<ExternalPlace[]>([]);
   const [externalLoading, setExternalLoading] = useState(false);
@@ -52,6 +58,15 @@ export default function ExplorePage() {
   const hasPreciseLocation = hasCoords && source === "gps";
   const userLat = hasCoords ? latitude : null;
   const userLng = hasCoords ? longitude : null;
+
+  const loadGems = useCallback(async () => {
+    const rows = await fetchApprovedGems();
+    setGems(rows);
+  }, []);
+
+  useEffect(() => {
+    loadGems();
+  }, [loadGems]);
 
   // Fetch nearby places from OSM whenever coords or radius change
   useEffect(() => {
@@ -103,8 +118,14 @@ export default function ExplorePage() {
     const localNames = new Set(localWithDist.map((p) => p.name.toLowerCase()));
     const osmUnique = nearbyPlaces.filter((p) => !localNames.has(p.name.toLowerCase()));
 
-    return [...localWithDist, ...osmUnique];
-  }, [userLat, userLng, nearbyPlaces, hasCoords]);
+    // Merge community gems
+    const gemPlaces = gems.map((g) => {
+      const p = gemToPlace(g);
+      return { ...p, distance: getDistance(userLat, userLng, p.lat, p.lng) };
+    });
+
+    return [...gemPlaces, ...localWithDist, ...osmUnique];
+  }, [userLat, userLng, nearbyPlaces, hasCoords, gems]);
 
   const filtered = useMemo(() => {
     let result = allPlaces;
