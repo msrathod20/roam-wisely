@@ -30,7 +30,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Hero */}
       <section className="relative min-h-[92vh] flex items-center">
-        <img src={heroBg} alt="Bangalore cityscape" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={heroBg} alt="Karnataka landscape" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/70 via-foreground/50 to-foreground/80" />
 
         <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-primary/20 blur-[100px] animate-pulse-soft" />
@@ -54,7 +54,7 @@ export default function LandingPage() {
             </motion.h1>
 
             <motion.p variants={fadeUp} custom={2} className="text-primary-foreground/75 text-lg md:text-xl max-w-xl mb-10 leading-relaxed">
-              Your personal travel companion for Bangalore. We find places near you and tell you everything — the history, the food, the culture, and the insider tips locals know.
+              Your personal travel companion for Karnataka. We find places near you and tell you everything — the history, the food, the culture, and the insider tips locals know.
             </motion.p>
 
             <motion.div variants={fadeUp} custom={3} className="flex flex-wrap gap-4">
@@ -132,7 +132,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
-              { step: "01", title: "We Find You", desc: "Allow location access and we instantly detect where you are in Bangalore.", icon: MapPin },
+              { step: "01", title: "We Find You", desc: "Allow location access and we instantly detect where you are in Karnataka.", icon: MapPin },
               { step: "02", title: "We Show You", desc: "See places sorted by distance with rich details — history, food spots, cultural insights, and tips.", icon: Sparkles },
               { step: "03", title: "You Explore", desc: "Pick a place, read the story, try the food, and get directions with one tap.", icon: Navigation },
             ].map((item, i) => (
@@ -377,7 +377,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
           >
             <h2 className="font-display text-3xl md:text-5xl font-extrabold text-primary-foreground mb-5">
-              Start Discovering<br />Bangalore Now
+              Start Discovering<br />Karnataka Now
             </h2>
             <p className="text-primary-foreground/75 text-lg mb-10 max-w-lg mx-auto">
               20+ curated places with deep cultural insights, food recommendations, and history. Completely free, forever.
