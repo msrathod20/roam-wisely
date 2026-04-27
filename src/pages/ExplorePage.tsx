@@ -468,6 +468,26 @@ export default function ExplorePage() {
 
       <PlaceDetail place={selectedPlace} onClose={() => setSelectedPlace(null)} usesPreciseLocation={hasPreciseLocation} />
       <ExternalPlaceDetail place={selectedExternal} onClose={() => setSelectedExternal(null)} />
+
+      {/* Floating Add Gem button */}
+      <button
+        onClick={() => setGemDialogOpen(true)}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 pl-4 pr-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+        aria-label="Add a hidden gem"
+      >
+        <Plus className="w-5 h-5" />
+        <span className="hidden sm:inline">Add a Hidden Gem</span>
+        <span className="sm:hidden">Add Gem</span>
+        <span aria-hidden>👀</span>
+      </button>
+
+      <AddGemDialog
+        open={gemDialogOpen}
+        onOpenChange={setGemDialogOpen}
+        defaultLat={userLat}
+        defaultLng={userLng}
+        onSubmitted={loadGems}
+      />
     </div>
   );
 }
