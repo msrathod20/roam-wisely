@@ -83,33 +83,41 @@ export async function submitGem(input: SubmitGemInput): Promise<{ ok: true } | {
     if (input.imageFile.size > 5 * 1024 * 1024) {
       return { ok: false, error: "Image must be smaller than 5MB" };
     }
-    const ext = input.imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from("gem-images")
-      .upload(path, input.imageFile, { contentType: input.imageFile.type, upsert: false });
-    if (upErr) {
-      console.error("[userGems] image upload failed", upErr);
-      return { ok: false, error: "Image upload failed. Try a smaller file." };
+    try {
+      const ext = input.imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("gem-images")
+        .upload(path, input.imageFile, { contentType: input.imageFile.type, upsert: false });
+      if (upErr) {
+        console.warn("[userGems] image upload failed, continuing without image", upErr);
+      } else {
+        const { data: pub } = supabase.storage.from("gem-images").getPublicUrl(path);
+        imageUrl = pub.publicUrl;
+      }
+    } catch (e) {
+      console.warn("[userGems] image upload threw, continuing without image", e);
     }
-    const { data: pub } = supabase.storage.from("gem-images").getPublicUrl(path);
-    imageUrl = pub.publicUrl;
   }
 
-  const { error } = await supabase.from("user_gems").insert({
-    name: input.name.trim(),
-    description: input.description.trim(),
-    category: input.category,
-    latitude: input.latitude,
-    longitude: input.longitude,
-    image_url: imageUrl,
-    submitter_name: input.submitterName?.trim() || null,
-    user_id: input.userId || null,
-  });
-
-  if (error) {
-    console.error("[userGems] insert failed", error);
-    return { ok: false, error: error.message || "Could not submit gem" };
+  try {
+    const { error } = await supabase.from("user_gems").insert({
+      name: input.name.trim(),
+      description: input.description.trim(),
+      category: input.category,
+      latitude: input.latitude,
+      longitude: input.longitude,
+      image_url: imageUrl,
+      submitter_name: input.submitterName?.trim() || null,
+      user_id: input.userId || null,
+    });
+    if (error) {
+      console.error("[userGems] insert failed", error);
+      return { ok: false, error: error.message || "Could not submit gem" };
+    }
+  } catch (e: any) {
+    console.error("[userGems] insert threw", e);
+    return { ok: false, error: "Network error. Check your connection and try again." };
   }
   return { ok: true };
 }
