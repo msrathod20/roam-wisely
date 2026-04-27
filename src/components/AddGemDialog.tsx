@@ -107,7 +107,7 @@ export default function AddGemDialog({
       onOpenChange(false);
       onSubmitted?.();
     } else {
-      toast.error(res.error);
+      toast.error((res as { ok: false; error: string }).error);
     }
   };
 
