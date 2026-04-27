@@ -17,7 +17,9 @@ import { motion } from "framer-motion";
 import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 import { searchNearbyPlaces, reverseGeocode, NearbyPlace } from "@/lib/nearbyPlacesSearch";
 import AddGemDialog from "@/components/AddGemDialog";
-import { fetchApprovedGems, gemToPlace, UserGemRow } from "@/lib/userGems";
+import { fetchApprovedGems, gemToPlace, UserGemRow, GemCategory } from "@/lib/userGems";
+import GemHighlights from "@/components/GemHighlights";
+import GemFilterChips, { GemFilter } from "@/components/GemFilterChips";
 
 export default function ExplorePage() {
   const {
@@ -47,6 +49,7 @@ export default function ExplorePage() {
   // User-submitted gems
   const [gems, setGems] = useState<UserGemRow[]>([]);
   const [gemDialogOpen, setGemDialogOpen] = useState(false);
+  const [gemFilter, setGemFilter] = useState<GemFilter>("all");
 
   // External search state
   const [externalResults, setExternalResults] = useState<ExternalPlace[]>([]);
@@ -127,6 +130,27 @@ export default function ExplorePage() {
     return [...gemPlaces, ...localWithDist, ...osmUnique];
   }, [userLat, userLng, nearbyPlaces, hasCoords, gems]);
 
+  // Approved gems sorted by distance — used for highlights & gem-only filter view
+  const nearbyGems = useMemo(() => {
+    if (!hasCoords || userLat === null || userLng === null) return [];
+    return gems
+      .map((g) => {
+        const p = gemToPlace(g);
+        return { ...p, distance: getDistance(userLat, userLng, p.lat, p.lng) };
+      })
+      .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+  }, [gems, hasCoords, userLat, userLng]);
+
+  // Counts for filter chips (over nearby gems regardless of radius)
+  const gemCounts = useMemo(() => {
+    const c: Partial<Record<GemFilter, number>> = { all: nearbyGems.length };
+    for (const g of nearbyGems) {
+      const k = g.gemCategory as GemFilter | undefined;
+      if (k) c[k] = (c[k] ?? 0) + 1;
+    }
+    return c;
+  }, [nearbyGems]);
+
   const filtered = useMemo(() => {
     let result = allPlaces;
     const hasSearch = search.trim().length > 0;
@@ -142,11 +166,19 @@ export default function ExplorePage() {
     if (selectedCategories.length > 0) {
       result = result.filter(p => selectedCategories.includes(p.category));
     }
+    // Community gem filter — when not "all", show ONLY user gems matching that category
+    if (gemFilter !== "all") {
+      result = result.filter(
+        (p) =>
+          (p as Place & { isUserGem?: boolean }).isUserGem === true &&
+          (p as Place & { gemCategory?: GemCategory }).gemCategory === gemFilter
+      );
+    }
     // Always filter by distance (from user's actual location)
     let inRadius = result.filter(p => (p.distance ?? 0) <= maxDistance);
 
     // Auto-expand: if too few local famous places nearby, gradually widen up to 300km
-    if (!hasSearch && inRadius.length < 6) {
+    if (!hasSearch && gemFilter === "all" && inRadius.length < 6) {
       const widerRadii = [maxDistance * 2, 100, 200, 300];
       for (const r of widerRadii) {
         inRadius = result.filter(p => (p.distance ?? 0) <= r);
@@ -167,7 +199,7 @@ export default function ExplorePage() {
       result.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
     }
     return result;
-  }, [allPlaces, search, selectedCategories, maxDistance, ecoOnly, user]);
+  }, [allPlaces, search, selectedCategories, maxDistance, ecoOnly, user, gemFilter]);
 
   // Debounced external search
   const triggerExternalSearch = useCallback(async (query: string) => {
@@ -338,6 +370,25 @@ export default function ExplorePage() {
           ecoOnly={ecoOnly}
           onEcoToggle={() => setEcoOnly(!ecoOnly)}
         />
+
+        {/* Community gem filter chips */}
+        {nearbyGems.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Community picks
+            </p>
+            <GemFilterChips value={gemFilter} onChange={setGemFilter} counts={gemCounts} />
+          </div>
+        )}
+
+        {/* Hidden Gems Near You highlight */}
+        {gemFilter === "all" && search.trim().length === 0 && (
+          <GemHighlights
+            gems={nearbyGems}
+            onSelect={setSelectedPlace}
+            usesPreciseLocation={hasPreciseLocation}
+          />
+        )}
       </div>
 
       <div className="flex-1 container pb-8">
