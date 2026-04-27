@@ -8,15 +8,12 @@ export default function Navbar() {
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
-  const isLanding = location.pathname === "/";
 
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isLanding ? "bg-transparent absolute w-full" : "glass-card border-b border-border shadow-sm"
-      }`}
+      className="sticky top-0 z-50 transition-all duration-300 glass-card border-b border-border shadow-sm"
     >
       <div className="container flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2.5 group">
@@ -24,12 +21,10 @@ export default function Navbar() {
             <Compass className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="hidden sm:block">
-            <span className={`font-display text-lg font-bold ${isLanding ? "text-foreground" : "text-foreground"}`}>
+            <span className="font-display text-lg font-bold text-foreground">
               Explorer
             </span>
-            <span className={`text-[10px] block -mt-0.5 font-medium tracking-wider uppercase ${
-              isLanding ? "text-muted-foreground" : "text-muted-foreground"
-            }`}>
+            <span className="text-[10px] block -mt-0.5 font-medium tracking-wider uppercase text-muted-foreground">
               Beyond Horizons
             </span>
           </div>
@@ -41,9 +36,7 @@ export default function Navbar() {
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
               isActive("/explore")
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : isLanding
-                  ? "text-primary-foreground/80 hover:bg-primary-foreground/10"
-                  : "text-muted-foreground hover:bg-muted"
+                : "text-foreground hover:bg-muted"
             }`}
           >
             <Map className="w-4 h-4" />
@@ -55,9 +48,7 @@ export default function Navbar() {
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
               isActive("/trip-planner")
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : isLanding
-                  ? "text-primary-foreground/80 hover:bg-primary-foreground/10"
-                  : "text-muted-foreground hover:bg-muted"
+                : "text-foreground hover:bg-muted"
             }`}
           >
             <Sparkles className="w-4 h-4" />
@@ -71,9 +62,7 @@ export default function Navbar() {
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
                   isActive("/favorites")
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : isLanding
-                      ? "text-primary-foreground/80 hover:bg-primary-foreground/10"
-                      : "text-muted-foreground hover:bg-muted"
+                    : "text-foreground hover:bg-muted"
                 }`}
               >
                 <Heart className="w-4 h-4" />
@@ -92,9 +81,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={logout}
-                className={`p-2 rounded-lg transition-colors ${
-                  isLanding ? "text-primary-foreground/70 hover:text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                className="p-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                 aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" />
