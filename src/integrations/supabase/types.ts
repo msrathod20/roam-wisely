@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      user_gems: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          latitude: number
+          likes_count: number
+          longitude: number
+          name: string
+          rating: number
+          status: string
+          submitter_name: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          latitude: number
+          likes_count?: number
+          longitude: number
+          name: string
+          rating?: number
+          status?: string
+          submitter_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          latitude?: number
+          likes_count?: number
+          longitude?: number
+          name?: string
+          rating?: number
+          status?: string
+          submitter_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

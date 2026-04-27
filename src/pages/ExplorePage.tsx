@@ -12,10 +12,12 @@ import LocationBar from "@/components/LocationBar";
 import LocationPrompt from "@/components/LocationPrompt";
 import { KarnatakaCity } from "@/data/karnatakaCities";
 import { useApp } from "@/context/AppContext";
-import { Loader2, Sparkles, Globe, RefreshCw } from "lucide-react";
+import { Loader2, Sparkles, Globe, RefreshCw, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { searchExternalPlaces, ExternalPlace } from "@/lib/externalPlaceSearch";
 import { searchNearbyPlaces, reverseGeocode, NearbyPlace } from "@/lib/nearbyPlacesSearch";
+import AddGemDialog from "@/components/AddGemDialog";
+import { fetchApprovedGems, gemToPlace, UserGemRow } from "@/lib/userGems";
 
 export default function ExplorePage() {
   const {
@@ -42,6 +44,10 @@ export default function ExplorePage() {
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [locationName, setLocationName] = useState<string>("your area");
 
+  // User-submitted gems
+  const [gems, setGems] = useState<UserGemRow[]>([]);
+  const [gemDialogOpen, setGemDialogOpen] = useState(false);
+
   // External search state
   const [externalResults, setExternalResults] = useState<ExternalPlace[]>([]);
   const [externalLoading, setExternalLoading] = useState(false);
@@ -52,6 +58,15 @@ export default function ExplorePage() {
   const hasPreciseLocation = hasCoords && source === "gps";
   const userLat = hasCoords ? latitude : null;
   const userLng = hasCoords ? longitude : null;
+
+  const loadGems = useCallback(async () => {
+    const rows = await fetchApprovedGems();
+    setGems(rows);
+  }, []);
+
+  useEffect(() => {
+    loadGems();
+  }, [loadGems]);
 
   // Fetch nearby places from OSM whenever coords or radius change
   useEffect(() => {
@@ -103,8 +118,14 @@ export default function ExplorePage() {
     const localNames = new Set(localWithDist.map((p) => p.name.toLowerCase()));
     const osmUnique = nearbyPlaces.filter((p) => !localNames.has(p.name.toLowerCase()));
 
-    return [...localWithDist, ...osmUnique];
-  }, [userLat, userLng, nearbyPlaces, hasCoords]);
+    // Merge community gems
+    const gemPlaces = gems.map((g) => {
+      const p = gemToPlace(g);
+      return { ...p, distance: getDistance(userLat, userLng, p.lat, p.lng) };
+    });
+
+    return [...gemPlaces, ...localWithDist, ...osmUnique];
+  }, [userLat, userLng, nearbyPlaces, hasCoords, gems]);
 
   const filtered = useMemo(() => {
     let result = allPlaces;
@@ -447,6 +468,26 @@ export default function ExplorePage() {
 
       <PlaceDetail place={selectedPlace} onClose={() => setSelectedPlace(null)} usesPreciseLocation={hasPreciseLocation} />
       <ExternalPlaceDetail place={selectedExternal} onClose={() => setSelectedExternal(null)} />
+
+      {/* Floating Add Gem button */}
+      <button
+        onClick={() => setGemDialogOpen(true)}
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 pl-4 pr-5 py-3 rounded-full bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+        aria-label="Add a hidden gem"
+      >
+        <Plus className="w-5 h-5" />
+        <span className="hidden sm:inline">Add a Hidden Gem</span>
+        <span className="sm:hidden">Add Gem</span>
+        <span aria-hidden>👀</span>
+      </button>
+
+      <AddGemDialog
+        open={gemDialogOpen}
+        onOpenChange={setGemDialogOpen}
+        defaultLat={userLat}
+        defaultLng={userLng}
+        onSubmitted={loadGems}
+      />
     </div>
   );
 }
