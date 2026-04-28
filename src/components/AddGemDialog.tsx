@@ -10,6 +10,45 @@ import { GEM_CATEGORY_META, GemCategory, submitGem } from "@/lib/userGems";
 import { useApp } from "@/context/AppContext";
 import { toast } from "sonner";
 
+// Compress/resize an image file in the browser so uploads of any size succeed.
+async function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    const img: HTMLImageElement = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = dataUrl;
+    });
+    let { width, height } = img;
+    const scale = Math.min(1, maxDim / Math.max(width, height));
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, width, height);
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/jpeg", quality)
+    );
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  } catch {
+    return file;
+  }
+}
+
 interface AddGemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,16 +96,18 @@ export default function AddGemDialog({
     );
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 5 * 1024 * 1024) {
-      toast.error("Image must be smaller than 5MB");
+    // Hard upper bound to avoid memory issues on very huge files (50MB)
+    if (f.size > 50 * 1024 * 1024) {
+      toast.error("That photo is too large. Please pick one under 50MB.");
       return;
     }
-    setImageFile(f);
+    const compressed = await compressImage(f);
+    setImageFile(compressed);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(f));
+    setPreviewUrl(URL.createObjectURL(compressed));
   };
 
   const reset = () => {
