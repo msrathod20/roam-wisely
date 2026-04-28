@@ -53,7 +53,7 @@ const RAW_BANGALORE_PLACES: Place[] = [
     category: "nature",
     lat: 12.9507,
     lng: 77.5848,
-    image: "https://images.unsplash.com/photo-1588392382834-a891154bca4d?w=600&q=80",
+    image: "https://images.unsplash.com/photo-1597207947018-7cf2c8347fa3?w=800&q=80",
     rating: 4.6,
     isEcoFriendly: true,
   },
