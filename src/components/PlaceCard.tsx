@@ -45,7 +45,11 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
-          onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80"; }}
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            const fb = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80";
+            if (!img.src.includes("photo-1469474968028")) img.src = fb;
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
 
