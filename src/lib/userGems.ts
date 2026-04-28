@@ -80,8 +80,8 @@ export async function submitGem(input: SubmitGemInput): Promise<{ ok: true } | {
   let imageUrl: string | null = null;
 
   if (input.imageFile) {
-    if (input.imageFile.size > 5 * 1024 * 1024) {
-      return { ok: false, error: "Image must be smaller than 5MB" };
+    if (input.imageFile.size > 10 * 1024 * 1024) {
+      return { ok: false, error: "Image is too large after processing. Try a smaller photo." };
     }
     try {
       const ext = input.imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
