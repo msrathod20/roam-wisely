@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useApp } from "@/context/AppContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Compass, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { PlaceCategory, categoryConfig } from "@/data/places";
 import { z } from "zod";
+
+// ✅ IMPORT SUPABASE
+import { supabase } from "@/integrations/supabase/client";
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, "Name too short").max(50),
@@ -15,12 +17,12 @@ const registerSchema = z.object({
     .regex(/[A-Z]/, "Must contain at least one uppercase letter")
     .regex(/[a-z]/, "Must contain at least one lowercase letter")
     .regex(/[0-9]/, "Must contain at least one number")
-    .regex(/[^A-Za-z0-9]/, "Must contain at least one special character (!@#$%...)"),
+    .regex(/[^A-Za-z0-9]/, "Must contain at least one special character"),
 });
 
 export default function RegisterPage() {
-  const { register } = useApp();
   const navigate = useNavigate();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,22 +31,51 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
 
   const toggleInterest = (cat: PlaceCategory) => {
-    setInterests(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+    setInterests((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ✅ MAIN FIXED FUNCTION
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const result = registerSchema.safeParse({ name, email, password });
+
     if (!result.success) {
       setError(result.error.errors[0].message);
       return;
     }
+
     if (interests.length === 0) {
       setError("Select at least one interest");
       return;
     }
-    register(name, email, password, interests);
-    navigate("/explore");
+
+    setError("");
+
+    // 🔥 CREATE USER IN SUPABASE
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    // 🔥 STORE EXTRA USER DATA (optional but recommended)
+    if (data.user) {
+      await supabase.from("profiles").insert([
+        {
+          id: data.user.id,
+          name: name,
+          interests: interests,
+        },
+      ]);
+    }
+
+    alert("Signup successful!");
+    navigate("/login");
   };
 
   return (
@@ -64,74 +95,94 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-2xl border border-border p-7 space-y-5 shadow-lg">
-          {error && <div className="text-sm text-destructive bg-destructive/10 rounded-xl p-3.5 font-medium">{error}</div>}
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 rounded-xl p-3.5 font-medium">{error}</div>
+          )}
+
+          {/* Name */}
           <div>
             <label className="text-sm font-bold text-foreground block mb-2">Full Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-              placeholder="Your name" required />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm"
+              placeholder="Your name"
+              required
+            />
           </div>
+
+          {/* Email */}
           <div>
             <label className="text-sm font-bold text-foreground block mb-2">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-              placeholder="you@example.com" required />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm"
+              placeholder="you@example.com"
+              required
+            />
           </div>
+
+          {/* Password */}
           <div>
             <label className="text-sm font-bold text-foreground block mb-2">Password</label>
             <div className="relative">
-              <input type={showPass ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring pr-10 transition-shadow"
-                placeholder="••••••••" required />
-              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+              <input
+                type={showPass ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background pr-10 text-sm"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+              >
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {password.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {[
-                  { test: password.length >= 8, label: "At least 8 characters" },
-                  { test: /[A-Z]/.test(password), label: "One uppercase letter" },
-                  { test: /[a-z]/.test(password), label: "One lowercase letter" },
-                  { test: /[0-9]/.test(password), label: "One number" },
-                  { test: /[^A-Za-z0-9]/.test(password), label: "One special character" },
-                ].map(({ test, label }) => (
-                  <div key={label} className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${test ? "text-green-600" : "text-muted-foreground"}`}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${test ? "bg-green-500" : "bg-muted-foreground/40"}`} />
-                    {label}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
+
+          {/* Interests */}
           <div>
-            <label className="text-sm font-bold text-foreground block mb-2.5">Your Interests</label>
+            <label className="text-sm font-bold block mb-2.5">Your Interests</label>
             <div className="flex flex-wrap gap-2">
-              {(Object.keys(categoryConfig) as PlaceCategory[]).map(cat => {
+              {(Object.keys(categoryConfig) as PlaceCategory[]).map((cat) => {
                 const cfg = categoryConfig[cat];
                 const active = interests.includes(cat);
                 return (
-                  <button key={cat} type="button" onClick={() => toggleInterest(cat)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      active
-                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                        : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => toggleInterest(cat)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold ${
+                      active ? "bg-primary text-white" : "bg-muted text-gray-500"
                     }`}
                   >
-                    <cfg.icon className="w-3.5 h-3.5" /> {cfg.label}
+                    {cfg.label}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {/* Submit */}
           <button
             type="submit"
-            className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-primary text-white font-bold flex items-center justify-center gap-2"
           >
             Create Account <ArrowRight className="w-4 h-4" />
           </button>
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account? <Link to="/login" className="text-primary font-bold hover:underline">Sign In</Link>
+
+          <p className="text-center text-sm">
+            Already have an account?{" "}
+            <Link to="/login" className="text-primary font-bold">
+              Sign In
+            </Link>
           </p>
         </form>
       </motion.div>
