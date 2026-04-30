@@ -56,6 +56,10 @@ export default function RegisterPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: { name, interests },
+      },
     });
 
     if (error) {
@@ -68,21 +72,6 @@ export default function RegisterPage() {
     // ⚠️ If email confirmation ON → user may be null
     if (!user) {
       alert("Check your email to confirm signup");
-      return;
-    }
-
-    // ✅ STEP 2: Insert into profiles table
-    const { error: profileError } = await supabase.from("profiles").insert([
-      {
-        id: user.id,
-        name: name,
-        interests: interests,
-      },
-    ]);
-
-    if (profileError) {
-      console.log(profileError);
-      setError("Profile save failed");
       return;
     }
 
