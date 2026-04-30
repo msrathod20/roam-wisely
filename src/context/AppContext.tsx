@@ -24,6 +24,8 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const db = supabase as any;
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -35,12 +37,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const applySession = (sessionUser: any) => {
       if (!sessionUser) { setUser(null); setFavorites([]); return; }
       const meta = (sessionUser.user_metadata || {}) as { name?: string; interests?: PlaceCategory[] };
-      setUser({
+      const fallbackUser = {
         id: sessionUser.id,
         name: meta.name || sessionUser.email?.split("@")[0] || "Explorer",
         email: sessionUser.email || "",
         interests: meta.interests || [],
-      });
+      };
+      setUser(fallbackUser);
+      db.from("profiles")
+        .select("name,interests")
+        .eq("user_id", sessionUser.id)
+        .maybeSingle()
+        .then(({ data }: { data: { name?: string; interests?: PlaceCategory[] } | null }) => {
+          if (data) setUser({ ...fallbackUser, name: data.name || fallbackUser.name, interests: data.interests || [] });
+        });
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -55,12 +65,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user) { setFavorites([]); return; }
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("user_favorites")
-        .select("place_id")
-        .eq("user_id", user.id);
-      if (!cancelled && !error && data) {
-        setFavorites(data.map((r: { place_id: string }) => r.place_id));
+      const [savedRes, legacyRes] = await Promise.all([
+        db.from("saved_places").select("place_id").eq("user_id", user.id),
+        supabase.from("user_favorites").select("place_id").eq("user_id", user.id),
+      ]);
+      if (!cancelled) {
+        const ids = [
+          ...(savedRes.data || []).map((r: { place_id: string }) => r.place_id),
+          ...(legacyRes.data || []).map((r: { place_id: string }) => r.place_id),
+        ];
+        setFavorites(Array.from(new Set(ids)));
       }
     })();
     return () => { cancelled = true; };
@@ -100,17 +114,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Optimistic update
     setFavorites(prev => isFav ? prev.filter(id => id !== placeId) : [...prev, placeId]);
     if (isFav) {
-      const { error } = await supabase
-        .from("user_favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("place_id", placeId);
-      if (error) setFavorites(prev => [...prev, placeId]); // revert
+      const [savedRes, legacyRes] = await Promise.all([
+        db.from("saved_places").delete().eq("user_id", user.id).eq("place_id", placeId),
+        supabase.from("user_favorites").delete().eq("user_id", user.id).eq("place_id", placeId),
+      ]);
+      if (savedRes.error && legacyRes.error) setFavorites(prev => [...prev, placeId]); // revert
     } else {
-      const { error } = await supabase
-        .from("user_favorites")
-        .insert({ user_id: user.id, place_id: placeId });
-      if (error) setFavorites(prev => prev.filter(id => id !== placeId)); // revert
+      const [savedRes, legacyRes] = await Promise.all([
+        db.from("saved_places").upsert({ user_id: user.id, place_id: placeId }, { onConflict: "user_id,place_id" }),
+        supabase.from("user_favorites").upsert({ user_id: user.id, place_id: placeId }, { onConflict: "user_id,place_id" }),
+      ]);
+      if (savedRes.error && legacyRes.error) setFavorites(prev => prev.filter(id => id !== placeId)); // revert
     }
   };
 
