@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { PlaceCategory, categoryConfig } from "@/data/places";
 import { z } from "zod";
 
-// ✅ IMPORT SUPABASE
+// ✅ Supabase
 import { supabase } from "@/integrations/supabase/client";
 
 const registerSchema = z.object({
@@ -34,7 +34,7 @@ export default function RegisterPage() {
     setInterests((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
   };
 
-  // ✅ MAIN FIXED FUNCTION
+  // 🚀 FINAL HANDLE SUBMIT
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -52,17 +52,10 @@ export default function RegisterPage() {
 
     setError("");
 
-    // 🔥 CREATE USER IN SUPABASE
+    // ✅ STEP 1: Create user
     const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          name: name,
-          interests: interests,
-        },
-      },
+      email,
+      password,
     });
 
     if (error) {
@@ -70,7 +63,30 @@ export default function RegisterPage() {
       return;
     }
 
-    alert("Signup successful!");
+    const user = data.user;
+
+    // ⚠️ If email confirmation ON → user may be null
+    if (!user) {
+      alert("Check your email to confirm signup");
+      return;
+    }
+
+    // ✅ STEP 2: Insert into profiles table
+    const { error: profileError } = await supabase.from("profiles").insert([
+      {
+        id: user.id,
+        name: name,
+        interests: interests,
+      },
+    ]);
+
+    if (profileError) {
+      console.log(profileError);
+      setError("Profile save failed");
+      return;
+    }
+
+    alert("Signup successful 🚀");
     navigate("/login");
   };
 
@@ -83,83 +99,65 @@ export default function RegisterPage() {
         className="w-full max-w-sm"
       >
         <div className="text-center mb-8">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
-            <Compass className="w-7 h-7 text-primary-foreground" />
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-lg">
+            <Compass className="w-7 h-7 text-white" />
           </div>
-          <h1 className="font-display text-3xl font-extrabold text-foreground">Create Account</h1>
-          <p className="text-sm text-muted-foreground mt-2">Tell us what you love to explore</p>
+          <h1 className="text-3xl font-extrabold">Create Account</h1>
+          <p className="text-sm mt-2">Tell us what you love to explore</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card rounded-2xl border border-border p-7 space-y-5 shadow-lg">
-          {error && (
-            <div className="text-sm text-destructive bg-destructive/10 rounded-xl p-3.5 font-medium">{error}</div>
-          )}
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 space-y-4 shadow">
+          {error && <div className="text-sm text-red-600 bg-red-100 p-2 rounded">{error}</div>}
 
           {/* Name */}
-          <div>
-            <label className="text-sm font-bold text-foreground block mb-2">Full Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm"
-              placeholder="Your name"
-              required
-            />
-          </div>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Full Name"
+            className="w-full p-3 border rounded"
+            required
+          />
 
           {/* Email */}
-          <div>
-            <label className="text-sm font-bold text-foreground block mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="w-full p-3 border rounded"
+            required
+          />
 
           {/* Password */}
-          <div>
-            <label className="text-sm font-bold text-foreground block mb-2">Password</label>
-            <div className="relative">
-              <input
-                type={showPass ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-border bg-background pr-10 text-sm"
-                placeholder="••••••••"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-              >
-                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+          <div className="relative">
+            <input
+              type={showPass ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full p-3 border rounded pr-10"
+              required
+            />
+            <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3">
+              {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           {/* Interests */}
           <div>
-            <label className="text-sm font-bold block mb-2.5">Your Interests</label>
+            <p className="font-bold mb-2">Select Interests</p>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(categoryConfig) as PlaceCategory[]).map((cat) => {
-                const cfg = categoryConfig[cat];
                 const active = interests.includes(cat);
                 return (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => toggleInterest(cat)}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold ${
-                      active ? "bg-primary text-white" : "bg-muted text-gray-500"
-                    }`}
+                    className={`px-3 py-2 rounded text-xs ${active ? "bg-green-500 text-white" : "bg-gray-200"}`}
                   >
-                    {cfg.label}
+                    {categoryConfig[cat].label}
                   </button>
                 );
               })}
@@ -167,16 +165,13 @@ export default function RegisterPage() {
           </div>
 
           {/* Submit */}
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-xl bg-primary text-white font-bold flex items-center justify-center gap-2"
-          >
-            Create Account <ArrowRight className="w-4 h-4" />
+          <button className="w-full py-3 bg-green-600 text-white rounded flex justify-center gap-2">
+            Create Account <ArrowRight size={16} />
           </button>
 
           <p className="text-center text-sm">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary font-bold">
+            <Link to="/login" className="text-green-600 font-bold">
               Sign In
             </Link>
           </p>
