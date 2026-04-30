@@ -67,7 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (async () => {
       const [savedRes, legacyRes] = await Promise.all([
         db.from("saved_places").select("place_id").eq("user_id", user.id),
-        supabase.from("user_favorites").select("place_id").eq("user_id", user.id),
+        db.from("user_favorites").select("place_id").eq("user_id", user.id),
       ]);
       if (!cancelled) {
         const ids = [
@@ -132,13 +132,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (isFav) {
       const [savedRes, legacyRes] = await Promise.all([
         db.from("saved_places").delete().eq("user_id", user.id).eq("place_id", placeId),
-        supabase.from("user_favorites").delete().eq("user_id", user.id).eq("place_id", placeId),
+        db.from("user_favorites").delete().eq("user_id", user.id).eq("place_id", placeId),
       ]);
       if (savedRes.error && legacyRes.error) setFavorites(prev => [...prev, placeId]); // revert
     } else {
       const [savedRes, legacyRes] = await Promise.all([
         db.from("saved_places").upsert(savedPlace, { onConflict: "user_id,place_id" }),
-        supabase.from("user_favorites").upsert(savedPlace, { onConflict: "user_id,place_id" }),
+        db.from("user_favorites").upsert(savedPlace, { onConflict: "user_id,place_id" }),
       ]);
       if (savedRes.error && legacyRes.error) setFavorites(prev => prev.filter(id => id !== placeId)); // revert
     }
