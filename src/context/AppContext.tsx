@@ -15,7 +15,7 @@ interface AppContextType {
   register: (name: string, email: string, password: string, interests: PlaceCategory[]) => void;
   logout: () => void;
   favorites: string[];
-  toggleFavorite: (placeId: string) => void;
+  toggleFavorite: (placeId: string, place?: Place) => void;
   visitedPlaces: string[];
   markVisited: (placeId: string) => void;
   ratings: Record<string, number>;
@@ -108,9 +108,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setFavorites([]);
   };
 
-  const toggleFavorite = async (placeId: string) => {
+  const toggleFavorite = async (placeId: string, place?: Place) => {
     if (!user) return;
     const isFav = favorites.includes(placeId);
+    const savedPlace = place
+      ? {
+          user_id: user.id,
+          place_id: placeId,
+          name: place.name,
+          description: place.description,
+          category: place.category,
+          latitude: place.lat,
+          longitude: place.lng,
+          image: place.image,
+          rating: place.rating,
+          is_eco_friendly: place.isEcoFriendly,
+          why_famous: place.whyFamous,
+          things_to_try: place.thingsToTry,
+        }
+      : { user_id: user.id, place_id: placeId };
     // Optimistic update
     setFavorites(prev => isFav ? prev.filter(id => id !== placeId) : [...prev, placeId]);
     if (isFav) {
@@ -121,8 +137,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (savedRes.error && legacyRes.error) setFavorites(prev => [...prev, placeId]); // revert
     } else {
       const [savedRes, legacyRes] = await Promise.all([
-        db.from("saved_places").upsert({ user_id: user.id, place_id: placeId }, { onConflict: "user_id,place_id" }),
-        supabase.from("user_favorites").upsert({ user_id: user.id, place_id: placeId }, { onConflict: "user_id,place_id" }),
+        db.from("saved_places").upsert(savedPlace, { onConflict: "user_id,place_id" }),
+        supabase.from("user_favorites").upsert(savedPlace, { onConflict: "user_id,place_id" }),
       ]);
       if (savedRes.error && legacyRes.error) setFavorites(prev => prev.filter(id => id !== placeId)); // revert
     }
