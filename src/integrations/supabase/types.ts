@@ -43,43 +43,103 @@ export type Database = {
       }
       saved_places: {
         Row: {
+          category: string | null
           created_at: string
+          description: string | null
           id: string
+          image: string | null
+          is_eco_friendly: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string | null
           place_id: string
+          rating: number | null
+          things_to_try: string[]
           user_id: string
+          why_famous: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          image?: string | null
+          is_eco_friendly?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
           place_id: string
+          rating?: number | null
+          things_to_try?: string[]
           user_id: string
+          why_famous?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          image?: string | null
+          is_eco_friendly?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
           place_id?: string
+          rating?: number | null
+          things_to_try?: string[]
           user_id?: string
+          why_famous?: string | null
         }
         Relationships: []
       }
       user_favorites: {
         Row: {
+          category: string | null
           created_at: string
+          description: string | null
           id: string
+          image: string | null
+          is_eco_friendly: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string | null
           place_id: string
+          rating: number | null
+          things_to_try: string[]
           user_id: string
+          why_famous: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          image?: string | null
+          is_eco_friendly?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
           place_id: string
+          rating?: number | null
+          things_to_try?: string[]
           user_id: string
+          why_famous?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
+          image?: string | null
+          is_eco_friendly?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string | null
           place_id?: string
+          rating?: number | null
+          things_to_try?: string[]
           user_id?: string
+          why_famous?: string | null
         }
         Relationships: []
       }
