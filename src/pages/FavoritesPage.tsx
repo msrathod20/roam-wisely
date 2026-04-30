@@ -1,15 +1,25 @@
 import { useApp } from "@/context/AppContext";
 import { BANGALORE_PLACES, Place } from "@/data/places";
+import { KARNATAKA_PLACES } from "@/data/karnatakaPlaces";
 import PlaceCard from "@/components/PlaceCard";
 import PlaceDetail from "@/components/PlaceDetail";
 import { Heart } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchApprovedGems, gemToPlace, UserGemRow } from "@/lib/userGems";
 
 export default function FavoritesPage() {
   const { favorites } = useApp();
   const [selected, setSelected] = useState<Place | null>(null);
-  const favPlaces = BANGALORE_PLACES.filter(p => favorites.includes(p.id));
+  const [gems, setGems] = useState<UserGemRow[]>([]);
+  useEffect(() => {
+    fetchApprovedGems().then(setGems);
+  }, []);
+  const favPlaces = useMemo(() => {
+    const places = [...BANGALORE_PLACES, ...KARNATAKA_PLACES, ...gems.map(gemToPlace)];
+    const byId = new Map(places.map((place) => [place.id, place]));
+    return favorites.map((id) => byId.get(id)).filter(Boolean) as Place[];
+  }, [favorites, gems]);
 
   return (
     <div className="container py-8 min-h-[60vh]">

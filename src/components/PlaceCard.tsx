@@ -76,7 +76,7 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
 
         {user && (
           <button
-            onClick={(e) => { e.stopPropagation(); toggleFavorite(place.id); }}
+            onClick={(e) => { e.stopPropagation(); toggleFavorite(place.id, place); }}
             className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-card/90 backdrop-blur-sm flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
             aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
           >

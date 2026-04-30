@@ -123,6 +123,7 @@ export default function AddGemDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return toast.error("Please sign in to add a hidden gem");
     if (name.trim().length < 2) return toast.error("Please add a name (min 2 chars)");
     if (description.trim().length < 10) return toast.error("Description must be at least 10 characters");
     if (lat === null || lng === null) return toast.error("Please pin a location");
@@ -136,7 +137,7 @@ export default function AddGemDialog({
       longitude: lng,
       imageFile,
       submitterName: user?.name ?? null,
-      userId: null, // mock auth — real auth.uid not available
+      userId: user.id,
     });
     setSubmitting(false);
 

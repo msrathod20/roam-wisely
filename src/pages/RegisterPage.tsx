@@ -75,6 +75,11 @@ export default function RegisterPage() {
       return;
     }
 
+    await (supabase as any).from("profiles").upsert(
+      { user_id: user.id, name: name.trim(), interests },
+      { onConflict: "user_id" }
+    );
+
     alert("Signup successful 🚀");
     navigate("/login");
   };
