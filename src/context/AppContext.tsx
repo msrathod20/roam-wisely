@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { PlaceCategory, Place } from "@/data/places";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthUser {
   id: string;
@@ -10,7 +11,7 @@ interface AuthUser {
 
 interface AppContextType {
   user: AuthUser | null;
-  login: (email: string, password: string) => void;
+  login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, interests: PlaceCategory[]) => void;
   logout: () => void;
   favorites: string[];
@@ -29,12 +30,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [visitedPlaces, setVisitedPlaces] = useState<string[]>([]);
   const [ratings, setRatings] = useState<Record<string, number>>({});
 
-  const login = (email: string, _password: string) => {
+  const login = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      throw new Error(
+        error?.message?.toLowerCase().includes("invalid")
+          ? "No account found with these credentials. Please sign up first."
+          : error?.message || "Login failed"
+      );
+    }
+    const meta = (data.user.user_metadata || {}) as { name?: string; interests?: PlaceCategory[] };
     setUser({
-      id: "user-1",
-      name: email.split("@")[0],
-      email,
-      interests: ["food", "nature", "heritage"],
+      id: data.user.id,
+      name: meta.name || data.user.email?.split("@")[0] || "Explorer",
+      email: data.user.email || email,
+      interests: meta.interests || [],
     });
   };
 
@@ -42,7 +52,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUser({ id: "user-1", name, email, interests });
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    supabase.auth.signOut();
+    setUser(null);
+  };
 
   const toggleFavorite = (placeId: string) => {
     setFavorites(prev =>
