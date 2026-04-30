@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { PlaceCategory, Place } from "@/data/places";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,6 +30,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [visitedPlaces, setVisitedPlaces] = useState<string[]>([]);
   const [ratings, setRatings] = useState<Record<string, number>>({});
 
+  // Restore session + listen for auth changes
+  useEffect(() => {
+    const applySession = (sessionUser: any) => {
+      if (!sessionUser) { setUser(null); setFavorites([]); return; }
+      const meta = (sessionUser.user_metadata || {}) as { name?: string; interests?: PlaceCategory[] };
+      setUser({
+        id: sessionUser.id,
+        name: meta.name || sessionUser.email?.split("@")[0] || "Explorer",
+        email: sessionUser.email || "",
+        interests: meta.interests || [],
+      });
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      applySession(session?.user ?? null);
+    });
+    supabase.auth.getSession().then(({ data }) => applySession(data.session?.user ?? null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Load favorites whenever the user changes
+  useEffect(() => {
+    if (!user) { setFavorites([]); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("user_favorites")
+        .select("place_id")
+        .eq("user_id", user.id);
+      if (!cancelled && !error && data) {
+        setFavorites(data.map((r: { place_id: string }) => r.place_id));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
@@ -55,12 +91,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     supabase.auth.signOut();
     setUser(null);
+    setFavorites([]);
   };
 
-  const toggleFavorite = (placeId: string) => {
-    setFavorites(prev =>
-      prev.includes(placeId) ? prev.filter(id => id !== placeId) : [...prev, placeId]
-    );
+  const toggleFavorite = async (placeId: string) => {
+    if (!user) return;
+    const isFav = favorites.includes(placeId);
+    // Optimistic update
+    setFavorites(prev => isFav ? prev.filter(id => id !== placeId) : [...prev, placeId]);
+    if (isFav) {
+      const { error } = await supabase
+        .from("user_favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("place_id", placeId);
+      if (error) setFavorites(prev => [...prev, placeId]); // revert
+    } else {
+      const { error } = await supabase
+        .from("user_favorites")
+        .insert({ user_id: user.id, place_id: placeId });
+      if (error) setFavorites(prev => prev.filter(id => id !== placeId)); // revert
+    }
   };
 
   const markVisited = (placeId: string) => {
