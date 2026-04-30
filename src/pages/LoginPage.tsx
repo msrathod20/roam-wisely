@@ -25,15 +25,19 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
       setError(result.error.errors[0].message);
       return;
     }
-    login(email, password);
-    navigate("/explore");
+    try {
+      await login(email, password);
+      navigate("/explore");
+    } catch (err: any) {
+      setError(err?.message || "Login failed. Please sign up if you don't have an account.");
+    }
   };
 
   return (
