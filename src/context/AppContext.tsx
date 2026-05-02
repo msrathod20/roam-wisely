@@ -11,6 +11,7 @@ interface AuthUser {
 
 interface AppContextType {
   user: AuthUser | null;
+  authReady: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, interests: PlaceCategory[]) => void;
   logout: () => void;
@@ -28,6 +29,7 @@ const db = supabase as any;
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [visitedPlaces, setVisitedPlaces] = useState<string[]>([]);
   const [ratings, setRatings] = useState<Record<string, number>>({});
@@ -56,12 +58,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       applySession(session?.user ?? null);
     });
-    supabase.auth.getSession().then(({ data }) => applySession(data.session?.user ?? null));
+    supabase.auth.getSession().then(({ data }) => {
+      applySession(data.session?.user ?? null);
+      setAuthReady(true);
+    });
     return () => sub.subscription.unsubscribe();
   }, []);
 
   // Load favorites whenever the user changes
   useEffect(() => {
+    if (!authReady) return;
     if (!user?.id) { setFavorites([]); return; }
     let cancelled = false;
     (async () => {
@@ -74,7 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [authReady, user?.id]);
 
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -105,11 +111,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleFavorite = async (placeId: string, place?: Place) => {
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const activeUser = session?.user;
+    if (!activeUser) return;
+    const userId = activeUser.id;
     const isFav = favorites.includes(placeId);
     const savedPlace = place
       ? {
-          user_id: user.id,
+          user_id: userId,
           place_id: placeId,
           name: place.name,
           description: place.description,
@@ -122,14 +131,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           why_famous: place.whyFamous,
           things_to_try: place.thingsToTry,
         }
-      : { user_id: user.id, place_id: placeId };
+      : { user_id: userId, place_id: placeId };
     // Optimistic update
     setFavorites(prev => isFav ? prev.filter(id => id !== placeId) : [...prev, placeId]);
     if (isFav) {
       const { error } = await db
         .from("saved_places")
         .delete()
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("place_id", placeId);
       if (error) setFavorites(prev => [...prev, placeId]); // revert
     } else {
@@ -149,7 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ user, login, register, logout, favorites, toggleFavorite, visitedPlaces, markVisited, ratings, ratePlaceFn }}>
+    <AppContext.Provider value={{ user, authReady, login, register, logout, favorites, toggleFavorite, visitedPlaces, markVisited, ratings, ratePlaceFn }}>
       {children}
     </AppContext.Provider>
   );
