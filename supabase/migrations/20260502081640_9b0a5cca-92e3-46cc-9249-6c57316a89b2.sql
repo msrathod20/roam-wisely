@@ -1,0 +1,2 @@
+ALTER TABLE public.saved_places
+DROP CONSTRAINT IF EXISTS saved_places_user_place_unique;
