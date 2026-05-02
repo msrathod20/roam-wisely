@@ -321,7 +321,9 @@ export async function getPlacePhotoUrl(
 
   const request = (async () => {
     const wikiPhoto = await getWikipediaPhotoUrl(placeName, lat, lng);
-    const finalUrl = wikiPhoto || getPlaceFallbackImage(placeName, lat, lng) || fallbackImage || null;
+    // Prefer real photos: Wikipedia > caller-provided image (curated/uploaded) > generated SVG placeholder
+    const finalUrl =
+      wikiPhoto || fallbackImage || getPlaceFallbackImage(placeName, lat, lng) || null;
 
     if (finalUrl) {
       storePhoto(cacheKey, finalUrl);
