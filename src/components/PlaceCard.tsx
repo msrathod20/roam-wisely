@@ -18,11 +18,14 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
   const cat = categoryConfig[place.category];
   const isFav = favorites.includes(place.id);
   const visited = visitedPlaces.includes(place.id);
-  const photoUrl = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
   const directionsUrl = getGoogleMapsDirectionsUrl(place.lat, place.lng);
   const isPopular = (place as Place & { isPopular?: boolean }).isPopular === true;
   const reviewCount = (place as Place & { reviewCount?: number }).reviewCount;
   const isUserGem = (place as Place & { isUserGem?: boolean }).isUserGem === true;
+  // For user-submitted gems, always use the uploaded image directly.
+  // For curated places, try to enrich with a Google Places photo.
+  const googlePhoto = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
+  const photoUrl = isUserGem ? place.image : googlePhoto;
   const gemCategory = (place as Place & { gemCategory?: GemCategory }).gemCategory;
   const submitterName = (place as Place & { submitterName?: string | null }).submitterName;
   const gemMeta = gemCategory ? GEM_CATEGORY_META[gemCategory] : null;
