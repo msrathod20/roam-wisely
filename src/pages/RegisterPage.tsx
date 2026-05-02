@@ -4,6 +4,7 @@ import { Compass, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { PlaceCategory, categoryConfig } from "@/data/places";
 import { z } from "zod";
+import { toast } from "sonner";
 
 // ✅ Supabase
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +58,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}/explore`,
         data: { name, interests },
       },
     });
@@ -71,7 +72,8 @@ export default function RegisterPage() {
 
     // ⚠️ If email confirmation ON → user may be null
     if (!user) {
-      alert("Check your email to confirm signup");
+      toast.success("Check your email to confirm signup");
+      navigate("/explore");
       return;
     }
 
@@ -80,8 +82,8 @@ export default function RegisterPage() {
       { onConflict: "user_id" }
     );
 
-    alert("Signup successful 🚀");
-    navigate("/login");
+    toast.success("Signup successful 🚀");
+    navigate("/explore");
   };
 
   return (
