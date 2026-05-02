@@ -62,7 +62,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Load favorites whenever the user changes
   useEffect(() => {
-    if (!user) { setFavorites([]); return; }
+    if (!user?.id) { setFavorites([]); return; }
     let cancelled = false;
     (async () => {
       const { data } = await db
@@ -74,7 +74,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user?.id]);
 
   const login = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
