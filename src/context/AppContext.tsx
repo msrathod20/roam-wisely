@@ -54,4 +54,139 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUser(newUser);
     };
 
-    const { data: sub } = sup
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      applySession(data.session?.user ?? null);
+      setAuthReady(true);
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // ❤️ Load favorites
+  useEffect(() => {
+    if (!authReady || !user?.id) {
+      setFavorites([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      const { data, error } = await db.from("saved_places").select("place_id").eq("user_id", user.id);
+
+      if (!cancelled && !error) {
+        setFavorites((data || []).map((r: any) => r.place_id));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, user?.id]);
+
+  // 🔐 Login
+  const login = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error || !data.user) {
+      throw new Error(error?.message || "Login failed");
+    }
+  };
+
+  const register = (name: string, email: string, _password: string, interests: PlaceCategory[]) => {
+    setUser({ id: "user-1", name, email, interests });
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setFavorites([]);
+  };
+
+  // ❤️ FINAL WORKING FAVORITE FUNCTION
+  const toggleFavorite = async (placeId: string, place?: Place) => {
+    if (!authReady || !user?.id) {
+      console.warn("User not ready yet");
+      return;
+    }
+
+    const userId = user.id;
+    const isFav = favorites.includes(placeId);
+
+    const savedPlace = place
+      ? {
+          user_id: userId,
+          place_id: placeId,
+          name: place.name,
+          description: place.description,
+          category: place.category,
+          latitude: place.lat,
+          longitude: place.lng,
+          image: place.image,
+          rating: place.rating,
+          is_eco_friendly: place.isEcoFriendly,
+          why_famous: place.whyFamous,
+          things_to_try: place.thingsToTry,
+        }
+      : { user_id: userId, place_id: placeId };
+
+    // ⚡ Optimistic UI
+    setFavorites((prev) => (isFav ? prev.filter((id) => id !== placeId) : [...prev, placeId]));
+
+    if (isFav) {
+      const { error } = await db.from("saved_places").delete().eq("user_id", userId).eq("place_id", placeId);
+
+      if (error) {
+        console.error("DELETE ERROR:", error);
+        setFavorites((prev) => [...prev, placeId]);
+      }
+    } else {
+      const { error } = await db.from("saved_places").upsert(savedPlace, {
+        onConflict: "user_id,place_id",
+      });
+
+      if (error) {
+        console.error("INSERT ERROR:", error);
+        setFavorites((prev) => prev.filter((id) => id !== placeId));
+      }
+    }
+  };
+
+  const markVisited = (placeId: string) => {
+    setVisitedPlaces((prev) => (prev.includes(placeId) ? prev : [...prev, placeId]));
+  };
+
+  const ratePlaceFn = (placeId: string, rating: number) => {
+    setRatings((prev) => ({ ...prev, [placeId]: rating }));
+  };
+
+  return (
+    <AppContext.Provider
+      value={{
+        user,
+        authReady,
+        login,
+        register,
+        logout,
+        favorites,
+        toggleFavorite,
+        visitedPlaces,
+        markVisited,
+        ratings,
+        ratePlaceFn,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+}
+
+export function useApp() {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error("useApp must be used within AppProvider");
+  return ctx;
+}
