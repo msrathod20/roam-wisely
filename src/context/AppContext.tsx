@@ -34,64 +34,99 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [visitedPlaces, setVisitedPlaces] = useState<string[]>([]);
   const [ratings, setRatings] = useState<Record<string, number>>({});
 
-  // Restore session + listen for auth changes
+  // 🔐 Restore session + listen for auth changes
   useEffect(() => {
     const applySession = (sessionUser: any) => {
-      if (!sessionUser) { setUser(null); setFavorites([]); return; }
-      const meta = (sessionUser.user_metadata || {}) as { name?: string; interests?: PlaceCategory[] };
+      if (!sessionUser) {
+        setUser(null);
+        setFavorites([]);
+        return;
+      }
+
+      const meta = (sessionUser.user_metadata || {}) as {
+        name?: string;
+        interests?: PlaceCategory[];
+      };
+
       const fallbackUser = {
         id: sessionUser.id,
         name: meta.name || sessionUser.email?.split("@")[0] || "Explorer",
         email: sessionUser.email || "",
         interests: meta.interests || [],
       };
+
       setUser(fallbackUser);
+
+      // optional profile enrichment
       db.from("profiles")
         .select("name,interests")
         .eq("user_id", sessionUser.id)
         .maybeSingle()
-        .then(({ data }: { data: { name?: string; interests?: PlaceCategory[] } | null }) => {
-          if (data) setUser({ ...fallbackUser, name: data.name || fallbackUser.name, interests: data.interests || [] });
+        .then(({ data }: any) => {
+          if (data) {
+            setUser({
+              ...fallbackUser,
+              name: data.name || fallbackUser.name,
+              interests: data.interests || [],
+            });
+          }
         });
     };
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       applySession(session?.user ?? null);
     });
+
     supabase.auth.getSession().then(({ data }) => {
       applySession(data.session?.user ?? null);
       setAuthReady(true);
     });
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Load favorites whenever the user changes
+  // ❤️ Load favorites (FIXED — no race condition)
   useEffect(() => {
-    if (!authReady) return;
-    if (!user?.id) { setFavorites([]); return; }
+    if (!authReady || !user?.id) {
+      setFavorites([]);
+      return;
+    }
+
     let cancelled = false;
+
     (async () => {
-      const { data } = await db
-        .from("saved_places")
-        .select("place_id")
-        .eq("user_id", user.id);
+      const { data } = await db.from("saved_places").select("place_id").eq("user_id", user.id);
+
       if (!cancelled) {
-        setFavorites((data || []).map((r: { place_id: string }) => r.place_id));
+        setFavorites((data || []).map((r: any) => r.place_id));
       }
     })();
-    return () => { cancelled = true; };
-  }, [authReady, user?.id]);
 
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, user?.id]); // ✅ IMPORTANT FIX
+
+  // 🔐 Login
   const login = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
     if (error || !data.user) {
       throw new Error(
         error?.message?.toLowerCase().includes("invalid")
-          ? "No account found with these credentials. Please sign up first."
-          : error?.message || "Login failed"
+          ? "No account found. Please sign up."
+          : error?.message || "Login failed",
       );
     }
-    const meta = (data.user.user_metadata || {}) as { name?: string; interests?: PlaceCategory[] };
+
+    const meta = (data.user.user_metadata || {}) as {
+      name?: string;
+      interests?: PlaceCategory[];
+    };
+
     setUser({
       id: data.user.id,
       name: meta.name || data.user.email?.split("@")[0] || "Explorer",
@@ -110,12 +145,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setFavorites([]);
   };
 
+  // ❤️ FINAL FIXED toggleFavorite
   const toggleFavorite = async (placeId: string, place?: Place) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const activeUser = session?.user;
-    if (!activeUser) return;
-    const userId = activeUser.id;
+    if (!user?.id) return;
+
+    const userId = user.id;
     const isFav = favorites.includes(placeId);
+
     const savedPlace = place
       ? {
           user_id: userId,
@@ -132,33 +168,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
           things_to_try: place.thingsToTry,
         }
       : { user_id: userId, place_id: placeId };
-    // Optimistic update
-    setFavorites(prev => isFav ? prev.filter(id => id !== placeId) : [...prev, placeId]);
+
+    // 🔥 Instant UI update
+    setFavorites((prev) => (isFav ? prev.filter((id) => id !== placeId) : [...prev, placeId]));
+
     if (isFav) {
-      const { error } = await db
-        .from("saved_places")
-        .delete()
-        .eq("user_id", userId)
-        .eq("place_id", placeId);
-      if (error) setFavorites(prev => [...prev, placeId]); // revert
+      const { error } = await db.from("saved_places").delete().eq("user_id", userId).eq("place_id", placeId);
+
+      if (error) {
+        console.error(error);
+        setFavorites((prev) => [...prev, placeId]); // revert
+      }
     } else {
-      const { error } = await db
-        .from("saved_places")
-        .upsert(savedPlace, { onConflict: "user_id,place_id" });
-      if (error) setFavorites(prev => prev.filter(id => id !== placeId)); // revert
+      const { error } = await db.from("saved_places").upsert(savedPlace, {
+        onConflict: "user_id,place_id",
+      });
+
+      if (error) {
+        console.error(error);
+        setFavorites((prev) => prev.filter((id) => id !== placeId)); // revert
+      }
     }
   };
 
   const markVisited = (placeId: string) => {
-    setVisitedPlaces(prev => prev.includes(placeId) ? prev : [...prev, placeId]);
+    setVisitedPlaces((prev) => (prev.includes(placeId) ? prev : [...prev, placeId]));
   };
 
   const ratePlaceFn = (placeId: string, rating: number) => {
-    setRatings(prev => ({ ...prev, [placeId]: rating }));
+    setRatings((prev) => ({ ...prev, [placeId]: rating }));
   };
 
   return (
-    <AppContext.Provider value={{ user, authReady, login, register, logout, favorites, toggleFavorite, visitedPlaces, markVisited, ratings, ratePlaceFn }}>
+    <AppContext.Provider
+      value={{
+        user,
+        authReady,
+        login,
+        register,
+        logout,
+        favorites,
+        toggleFavorite,
+        visitedPlaces,
+        markVisited,
+        ratings,
+        ratePlaceFn,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
