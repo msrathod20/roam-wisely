@@ -7,7 +7,6 @@ import { AppProvider } from "@/context/AppContext";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LandingPage from "@/pages/LandingPage";
-import ComingSoonPage from "@/pages/ComingSoonPage";
 import ExplorePage from "@/pages/ExplorePage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
@@ -28,8 +27,7 @@ const App = () => (
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <Routes>
-              <Route path="/" element={<ComingSoonPage />} />
-              <Route path="/home" element={<LandingPage />} />
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/explore" element={<ExplorePage />} />
