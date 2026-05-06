@@ -1,3 +1,4 @@
+import { getCategoryFallbackImage } from "@/lib/googleMaps";
 import { Place, PlaceCategory } from "@/data/places";
 import { getDistance } from "@/data/places";
 import { buildOsmDescription } from "@/lib/placeDescription";
@@ -277,7 +278,7 @@ export async function searchNearbyPlaces(
           category,
           lat,
           lng,
-          image: categoryImages[category],
+          image: getCategoryFallbackImage(category, `osm-${el.type}-${el.id}`),
           rating,
           isEcoFriendly: category === "nature" || category === "eco",
           distance,
