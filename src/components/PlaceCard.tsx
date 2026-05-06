@@ -22,13 +22,24 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
   const isPopular = (place as Place & { isPopular?: boolean }).isPopular === true;
   const reviewCount = (place as Place & { reviewCount?: number }).reviewCount;
   const isUserGem = (place as Place & { isUserGem?: boolean }).isUserGem === true;
+  const isOsmPlace = typeof place.id === "string" && place.id.startsWith("osm-");
   // Category-based fallback (avoids repeated Taj Mahal placeholder)
   const categoryFallback = getCategoryFallbackImage(place.category, place.id || place.name);
   const baseImage = place.image && place.image.startsWith("http") ? place.image : categoryFallback;
-  // For user-submitted gems, always use the uploaded image directly.
-  // For curated places, try to enrich with a Google Places photo.
-  const googlePhoto = useGooglePlacePhoto(place.name, baseImage, place.lat, place.lng);
-  const photoUrl = isUserGem ? (place.image || categoryFallback) : googlePhoto;
+  // Skip Wikipedia enrichment for OSM places (generic names match unrelated articles
+  // and produce repeated/incorrect images like Taj Mahal). Use unique category fallback instead.
+  const shouldEnrich = !isUserGem && !isOsmPlace;
+  const googlePhoto = useGooglePlacePhoto(
+    shouldEnrich ? place.name : "",
+    baseImage,
+    shouldEnrich ? place.lat : undefined,
+    shouldEnrich ? place.lng : undefined,
+  );
+  const photoUrl = isUserGem
+    ? (place.image || categoryFallback)
+    : isOsmPlace
+      ? categoryFallback
+      : googlePhoto;
   const gemCategory = (place as Place & { gemCategory?: GemCategory }).gemCategory;
   const submitterName = (place as Place & { submitterName?: string | null }).submitterName;
   const gemMeta = gemCategory ? GEM_CATEGORY_META[gemCategory] : null;
