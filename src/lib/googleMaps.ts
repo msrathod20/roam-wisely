@@ -344,3 +344,59 @@ export async function getPlacePhotoUrl(
 export function getGoogleMapsDirectionsUrl(destLat: number, destLng: number): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}&travelmode=driving`;
 }
+
+// Category-based curated fallback imagery (no more repeated Taj Mahal placeholder)
+const CATEGORY_FALLBACK_IMAGES: Record<string, string[]> = {
+  food: [
+    "https://images.unsplash.com/photo-1567337710282-00832b415979?w=800&q=80",
+    "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&q=80",
+    "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80",
+  ],
+  heritage: [
+    "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=800&q=80",
+    "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&q=80",
+    "https://images.unsplash.com/photo-1548013146-72479768bada?w=800&q=80",
+  ],
+  nature: [
+    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
+    "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80",
+    "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80",
+  ],
+  nightlife: [
+    "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80",
+    "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=800&q=80",
+  ],
+  eco: [
+    "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80",
+    "https://images.unsplash.com/photo-1511497584788-876760111969?w=800&q=80",
+  ],
+  activities: [
+    "https://images.unsplash.com/photo-1533692328991-08159ff19fca?w=800&q=80",
+    "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=80",
+  ],
+  attraction: [
+    "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&q=80",
+    "https://images.unsplash.com/photo-1587135941948-670b381f08ce?w=800&q=80",
+  ],
+  cafe: [
+    "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80",
+    "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=800&q=80",
+    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80",
+  ],
+  rural: [
+    "https://images.unsplash.com/photo-1532375810709-75b1da00537c?w=800&q=80",
+    "https://images.unsplash.com/photo-1518684079-3c830dcef090?w=800&q=80",
+  ],
+};
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i) | 0;
+  return Math.abs(h);
+}
+
+export function getCategoryFallbackImage(category: string | undefined, seed: string): string {
+  const key = (category || "attraction").toLowerCase();
+  const list = CATEGORY_FALLBACK_IMAGES[key] || CATEGORY_FALLBACK_IMAGES.attraction;
+  return list[hashString(seed) % list.length];
+}
