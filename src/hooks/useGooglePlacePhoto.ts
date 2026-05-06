@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getPlaceFallbackImage, getPlacePhotoUrl } from "@/lib/googleMaps";
+import { getPlacePhotoUrl } from "@/lib/googleMaps";
 
 export function useGooglePlacePhoto(
   placeName: string,
@@ -7,11 +7,13 @@ export function useGooglePlacePhoto(
   lat?: number,
   lng?: number
 ): string {
-  const [photoUrl, setPhotoUrl] = useState(() => getPlaceFallbackImage(placeName, lat, lng) || fallbackImage);
+  // Start from the caller-provided image (already a unique per-place category fallback).
+  // Avoid the generic SVG map placeholder that made every card look identical.
+  const [photoUrl, setPhotoUrl] = useState(fallbackImage);
 
   useEffect(() => {
-    const baseImage = getPlaceFallbackImage(placeName, lat, lng) || fallbackImage;
-    setPhotoUrl(baseImage);
+    setPhotoUrl(fallbackImage);
+    if (!placeName) return;
 
     let cancelled = false;
 
