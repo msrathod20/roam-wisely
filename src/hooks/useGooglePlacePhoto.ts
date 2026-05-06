@@ -7,17 +7,13 @@ export function useGooglePlacePhoto(
   lat?: number,
   lng?: number
 ): string {
-  const [photoUrl, setPhotoUrl] = useState(() =>
-    placeName ? (getPlaceFallbackImage(placeName, lat, lng) || fallbackImage) : fallbackImage
-  );
+  // Start from the caller-provided image (already a unique per-place category fallback).
+  // Avoid the generic SVG map placeholder that made every card look identical.
+  const [photoUrl, setPhotoUrl] = useState(fallbackImage);
 
   useEffect(() => {
-    if (!placeName) {
-      setPhotoUrl(fallbackImage);
-      return;
-    }
-    const baseImage = getPlaceFallbackImage(placeName, lat, lng) || fallbackImage;
-    setPhotoUrl(baseImage);
+    setPhotoUrl(fallbackImage);
+    if (!placeName) return;
 
     let cancelled = false;
 
