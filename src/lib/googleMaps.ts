@@ -351,47 +351,90 @@ const CATEGORY_FALLBACK_IMAGES: Record<string, string[]> = {
     "https://images.unsplash.com/photo-1567337710282-00832b415979?w=800&q=80",
     "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&q=80",
     "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800&q=80",
+    "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=800&q=80",
+    "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800&q=80",
+    "https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=800&q=80",
+    "https://images.unsplash.com/photo-1574484284002-952d92456975?w=800&q=80",
+    "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=800&q=80",
+    "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=800&q=80",
+    "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=800&q=80",
   ],
   heritage: [
-    "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=800&q=80",
     "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&q=80",
     "https://images.unsplash.com/photo-1548013146-72479768bada?w=800&q=80",
+    "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
+    "https://images.unsplash.com/photo-1609947017136-9bd60307c4f0?w=800&q=80",
+    "https://images.unsplash.com/photo-1573053009372-bb547d2bd1d0?w=800&q=80",
+    "https://images.unsplash.com/photo-1587135941948-670b381f08ce?w=800&q=80",
+    "https://images.unsplash.com/photo-1518309568406-5c98a5b94c5d?w=800&q=80",
+    "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&q=80",
+    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80",
+    "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&q=80",
+    "https://images.unsplash.com/photo-1524492449090-1a065f6cd5a4?w=800&q=80",
   ],
   nature: [
     "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
     "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&q=80",
     "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80",
+    "https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&q=80",
+    "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80",
+    "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=800&q=80",
+    "https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&q=80",
+    "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80",
+    "https://images.unsplash.com/photo-1465056836041-7f43ac27dcb5?w=800&q=80",
+    "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=80",
   ],
   nightlife: [
     "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80",
     "https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=800&q=80",
+    "https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=800&q=80",
+    "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800&q=80",
+    "https://images.unsplash.com/photo-1485872299712-c87b07ce8a7c?w=800&q=80",
+    "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80",
   ],
   eco: [
     "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&q=80",
     "https://images.unsplash.com/photo-1511497584788-876760111969?w=800&q=80",
+    "https://images.unsplash.com/photo-1444930694458-01babe71870e?w=800&q=80",
+    "https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=800&q=80",
+    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
   ],
   activities: [
     "https://images.unsplash.com/photo-1533692328991-08159ff19fca?w=800&q=80",
     "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=80",
+    "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80",
+    "https://images.unsplash.com/photo-1530866495561-507c9faab2ed?w=800&q=80",
+    "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80",
+    "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?w=800&q=80",
   ],
   attraction: [
-    "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&q=80",
     "https://images.unsplash.com/photo-1587135941948-670b381f08ce?w=800&q=80",
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80",
+    "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80",
+    "https://images.unsplash.com/photo-1473625247510-8ceb1760943f?w=800&q=80",
+    "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=800&q=80",
+    "https://images.unsplash.com/photo-1517760444937-f6397edcbbcd?w=800&q=80",
   ],
   cafe: [
     "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80",
     "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=800&q=80",
     "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80",
+    "https://images.unsplash.com/photo-1453614512568-c4024d13c247?w=800&q=80",
+    "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=800&q=80",
+    "https://images.unsplash.com/photo-1559496417-e7f25cb247f3?w=800&q=80",
+    "https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&q=80",
   ],
   rural: [
     "https://images.unsplash.com/photo-1532375810709-75b1da00537c?w=800&q=80",
     "https://images.unsplash.com/photo-1518684079-3c830dcef090?w=800&q=80",
+    "https://images.unsplash.com/photo-1523805009345-7448845a9e53?w=800&q=80",
+    "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
   ],
 };
 
 function hashString(s: string): number {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i) | 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
 
