@@ -7,9 +7,15 @@ export function useGooglePlacePhoto(
   lat?: number,
   lng?: number
 ): string {
-  const [photoUrl, setPhotoUrl] = useState(() => getPlaceFallbackImage(placeName, lat, lng) || fallbackImage);
+  const [photoUrl, setPhotoUrl] = useState(() =>
+    placeName ? (getPlaceFallbackImage(placeName, lat, lng) || fallbackImage) : fallbackImage
+  );
 
   useEffect(() => {
+    if (!placeName) {
+      setPhotoUrl(fallbackImage);
+      return;
+    }
     const baseImage = getPlaceFallbackImage(placeName, lat, lng) || fallbackImage;
     setPhotoUrl(baseImage);
 
