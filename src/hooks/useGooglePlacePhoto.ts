@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getPlaceFallbackImage, getPlacePhotoUrl } from "@/lib/googleMaps";
+import { getPlacePhotoUrl } from "@/lib/googleMaps";
 
 export function useGooglePlacePhoto(
   placeName: string,
