@@ -4,7 +4,7 @@ import { GEM_CATEGORY_META, GemCategory } from "@/lib/userGems";
 import { useApp } from "@/context/AppContext";
 import { motion } from "framer-motion";
 import { useGooglePlacePhoto } from "@/hooks/useGooglePlacePhoto";
-import { getGoogleMapsDirectionsUrl } from "@/lib/googleMaps";
+import { getGoogleMapsDirectionsUrl, getCategoryFallbackImage } from "@/lib/googleMaps";
 import { formatDistanceSummary } from "@/lib/distance";
 
 interface PlaceCardProps {
@@ -22,10 +22,13 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
   const isPopular = (place as Place & { isPopular?: boolean }).isPopular === true;
   const reviewCount = (place as Place & { reviewCount?: number }).reviewCount;
   const isUserGem = (place as Place & { isUserGem?: boolean }).isUserGem === true;
+  // Category-based fallback (avoids repeated Taj Mahal placeholder)
+  const categoryFallback = getCategoryFallbackImage(place.category, place.id || place.name);
+  const baseImage = place.image && place.image.startsWith("http") ? place.image : categoryFallback;
   // For user-submitted gems, always use the uploaded image directly.
   // For curated places, try to enrich with a Google Places photo.
-  const googlePhoto = useGooglePlacePhoto(place.name, place.image, place.lat, place.lng);
-  const photoUrl = isUserGem ? place.image : googlePhoto;
+  const googlePhoto = useGooglePlacePhoto(place.name, baseImage, place.lat, place.lng);
+  const photoUrl = isUserGem ? (place.image || categoryFallback) : googlePhoto;
   const gemCategory = (place as Place & { gemCategory?: GemCategory }).gemCategory;
   const submitterName = (place as Place & { submitterName?: string | null }).submitterName;
   const gemMeta = gemCategory ? GEM_CATEGORY_META[gemCategory] : null;
@@ -42,21 +45,20 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
       tabIndex={0}
       aria-label={`View details for ${place.name}`}
     >
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative w-full overflow-hidden aspect-[16/10] sm:aspect-[16/9]">
         <img
           src={photoUrl}
           alt={place.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          className="absolute inset-0 w-full h-full object-cover md:group-hover:scale-110 transition-transform duration-700"
           loading="lazy"
           onError={(e) => {
             const img = e.target as HTMLImageElement;
-            const fb = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&q=80";
-            if (!img.src.includes("photo-1469474968028")) img.src = fb;
+            if (img.src !== categoryFallback) img.src = categoryFallback;
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-        <div className="absolute top-3 left-3 flex gap-1.5">
+        <div className="absolute top-3 left-3 right-14 flex flex-wrap gap-1.5">
           {isUserGem && gemMeta && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-accent text-accent-foreground backdrop-blur-sm shadow-sm border border-primary/30">
               {gemMeta.emoji} {gemMeta.label}
@@ -72,7 +74,7 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
               <Leaf className="w-3 h-3" /> Eco
             </span>
           )}
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-card/90 text-card-foreground backdrop-blur-sm">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/80 text-foreground backdrop-blur-md shadow-sm">
             <cat.icon className="w-3 h-3" /> {cat.label}
           </span>
         </div>
@@ -80,25 +82,20 @@ export default function PlaceCard({ place, onSelect, usesPreciseLocation = true 
         {user && (
           <button
             onClick={(e) => { e.stopPropagation(); toggleFavorite(place.id, place); }}
-            className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-card/90 backdrop-blur-sm flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
+            className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-90"
             aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
           >
-            <Heart className={`w-4 h-4 ${isFav ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+            <Heart className={`w-4 h-4 ${isFav ? "fill-destructive text-destructive" : "text-foreground/70"}`} />
           </button>
         )}
 
-        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-          <h3 className="text-primary-foreground font-display text-lg font-bold leading-tight drop-shadow-md">
+        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2">
+          <h3 className="text-white font-display text-base sm:text-lg font-bold leading-tight drop-shadow-md line-clamp-2 min-w-0">
             {place.name}
           </h3>
-          <div className="flex items-center gap-1 text-primary-foreground text-sm font-semibold shrink-0">
-            <Star className="w-3.5 h-3.5 fill-warning text-warning" />
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shrink-0">
+            <Star className="w-3 h-3 fill-warning text-warning" />
             {place.rating}
-            {reviewCount !== undefined && (
-              <span className="text-primary-foreground/80 text-xs font-medium ml-0.5">
-                ({reviewCount > 999 ? `${(reviewCount / 1000).toFixed(1)}k` : reviewCount})
-              </span>
-            )}
           </div>
         </div>
       </div>
